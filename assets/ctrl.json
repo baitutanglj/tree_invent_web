@@ -1,0 +1,115 @@
+{
+    "model":{
+        "device":"cuda",
+        "mlp1_hidden_dim":800,
+        "mlp2_hidden_dim":800
+    },
+    "train":{
+        "batchsize":25,
+        "initlr":0.00005
+    },
+    "system":{
+        "max_atoms":46,
+        "max_cliques":42,
+        "max_rings":8,
+        "max_ring_size":34,
+        "max_ring_states":62,
+        "max_node_add_states":42,
+        "max_node_connect_states":42,
+        "ring_cover_rate":0.97
+    },
+    "rl":{
+        "score_components":["dockscore"],
+        "sigma":50,
+        "acc_steps":1,
+        "vsigma":20
+    },
+    "docking":{
+        "dock_input_path":"/data/myxu/Tree_Invent/scripts/3CLPro/7RFS",
+        "backend":"Glide",
+        "low_threshold":-9.0,
+        "high_threshold":-4.0,
+        "k":0.2,
+        "dockstream_root_path":"/data/myxu/Tree_Invent/envs/DockStream",
+        "grid_path":"glide-grid_7RFS_CovPosConstraint.zip",
+        "ncores":25,
+        "nposes":2,
+        "glide_keywords":{
+            "[CONSTRAINT_GROUP:1]":{
+                "USE_CONS":   "A:HID:164:O(hbond):1,",
+                "NREQUIRED_CONS":   "1"
+            },
+            "[CONSTRAINT_GROUP:2]":{
+                "USE_CONS":   "np:2,",
+                "NREQUIRED_CONS":   "1"
+            },
+
+            "[FEATURE:1]":{
+                "PATTERN1":  "[#1][#7] 1 include"
+            },
+
+            "[FEATURE:2]":{
+                "PATTERN1":  "[N;X2] 1 include"
+            }
+        }
+    },
+    "sample_constrain":{
+        "max_node_steps":5,
+        "max_ring_nodes":100,
+        "temp":1.0,
+        "ring_check_mode":"easy",
+        "constrain_step_dict":{
+            "0":{
+
+                    "node add":{
+                        "specific_nodefile":"part_0.pickle",
+                        "force_step":true
+                    },
+                    "node conn":{
+                        "saturation_atomid_list":[0,1,3,5]
+                    }
+                },
+            "1":{
+                "node add":{
+                    "max_anum_per_atomtype":{"C":1,"N":1,"O":1,"F":1,"P":1,"S":1,"Cl":1,"Br":1,"I":1},
+                    "force_step":true
+                }, 
+                "node conn":{
+                    "constrain_connect_node_id":[0],
+                    "constrain_connect_atom_id":[[2]]
+                }
+            },
+            "2":{
+                "node add":{
+                    "max_anum_per_atomtype":{"C":1,"N":1,"O":1,"F":1,"P":1,"S":1,"Cl":1,"Br":1,"I":1},
+                    "force_step":true
+                }, 
+                "node conn":{
+                    "constrain_connect_node_id":[0],
+                    "constrain_connect_atom_id":[[4]]
+                }
+            },
+            "3":{
+                "node add":{
+                    "max_ring_num_per_node":1,
+                    "min_ring_num_per_node":1,
+                    "force_step":true
+                },
+                "node conn":{
+                    "constrain_connect_node_id":[1]
+                }
+            },
+            "4":{
+                "node add":{
+                    "max_ring_num_per_node":2,
+                    "min_ring_num_per_node":1,
+                    "max_anum_per_atomtype":{"C":6,"N":3,"O":2,"F":0,"P":0,"S":0,"Cl":0,"Br":0,"I":0},
+                    "force_step":true
+                },
+                "node conn":{
+                    "constrain_connect_node_id":[2]
+                }
+            }
+        }
+    }
+}
