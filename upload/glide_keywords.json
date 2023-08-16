@@ -1,0 +1,18 @@
+{
+  "glide_keywords": {
+    "[CONSTRAINT_GROUP:1]": {
+      "USE_CONS": "A:HID:164:O(hbond):1,",
+      "NREQUIRED_CONS": "1"
+    },
+    "[CONSTRAINT_GROUP:2]": {
+      "USE_CONS": "np:2,",
+      "NREQUIRED_CONS": "1"
+    },
+    "[FEATURE:1]": {
+      "PATTERN1": "[#1][#7] 1 include"
+    },
+    "[FEATURE:2]": {
+      "PATTERN1": "[N;X2] 1 include"
+    }
+  }
+}
