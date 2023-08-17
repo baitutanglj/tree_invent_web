@@ -1,5 +1,6 @@
 import sys
 
+import dash
 import feffery_antd_components as fac
 from dash.dependencies import Input, Output, State
 from .common_layout import mol_dir
@@ -147,11 +148,11 @@ def define_value(select_attr, input_node_value):
 def getter_graph_value_dict(current_nodes):
     output_dict = {}
     for node_data in current_nodes:
-        if 'specific_nodefile' not in node_data['data']['node add'].keys():
-            output_dict[node_data['data']['id']] = {'node add': node_data['data']['node add'],
-                                                    'node conn': node_data['data']['node conn']}
-        else:
-            node_data['data']['node add']['specific_nodefile'] = f"{mol_dir}/{node_data['data']['node add']['specific_nodefile']}"
+        output_dict[node_data['data']['id']] = {'node add': node_data['data']['node add'],
+                                                'node conn': node_data['data']['node conn']}
+        if 'specific_nodefile' in node_data['data']['node add'].keys():
+            if mol_dir not in node_data['data']['node add']['specific_nodefile']:
+                node_data['data']['node add']['specific_nodefile'] = f"{mol_dir}/{node_data['data']['node add']['specific_nodefile']}"
     return output_dict
 
 
@@ -160,31 +161,44 @@ def getter_graph_value_dict(current_nodes):
               Output('cytoscape-tapNodeData-json', 'children', allow_duplicate=True),
               Output('enter-value-button', "nClicks", allow_duplicate=True),
               Output('graph-dropdown-message', 'children'),
-              Output('graph-value-setter-store', 'data'),
               Input('enter-value-button', "nClicks"),
               Input('cytoscape-elements-callbacks', 'tapNodeData'),
               State("constrain-attr", "value"),
               State('constrain-value', 'value'),
               State('constrain-value2', 'checked'),
               State('cytoscape-elements-callbacks', 'elements'),
-              State('graph-value-setter-store', 'data'),
               prevent_initial_call=True)
-def update_node_attributes(nClicks, tapNodeData, select_attr, node_value, node_checked, elements, previous_data):
-    data = previous_data
+def update_node_attributes(nClicks, tapNodeData, select_attr, node_value, node_checked, elements):
     graph_dropdown_message = []
     show_data = show_TapNodeData(tapNodeData) if tapNodeData else []
     select_node = tapNodeData["id"] if tapNodeData else "0"
     current_nodes, node_ids = get_current_nodes(elements)
     current_edges, edges_ids = get_current_edges(elements)
+    # print('current_nodes', current_nodes)
     if nClicks:
         if select_attr[1] != 'force_step':
+            # print('select_attr, node_value', select_attr, node_value)
             current_nodes[int(select_node)]["data"][select_attr[0]][select_attr[1]] = define_value(select_attr, node_value)
         else:
             current_nodes[int(select_node)]["data"][select_attr[0]][select_attr[1]] = node_checked
         graph_dropdown_message = fac.AntdMessage(content='Update node attribute successfully', type='success')
         tapNodeData = current_nodes[int(select_node)]['data']
-        data['sample_constrain']['constrain_step_dict'].update(getter_graph_value_dict(current_nodes))
         show_data = show_TapNodeData(tapNodeData)
-    return select_node, current_nodes + current_edges, show_data, 0, graph_dropdown_message, data
+    return select_node, current_nodes + current_edges, show_data, 0, graph_dropdown_message
+
+
+##===================update graph-value-setter-store=====================
+@app.callback(
+    Output('graph-value-setter-store', 'data'),
+    Input('cytoscape-elements-callbacks', 'elements'),
+    State('graph-value-setter-store', 'data'),
+    prevent_initial_call=True
+)
+def update_graph_value(elements, previous_data):
+    data = previous_data
+    current_nodes, node_ids = get_current_nodes(elements)
+    data['sample_constrain']['constrain_step_dict'].update(getter_graph_value_dict(current_nodes))
+    return data
+
 
 

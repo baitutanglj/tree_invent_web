@@ -208,7 +208,7 @@ sample_layout = html.Div(
 def check_node_data(data):
     empty_list = []
     if data['sample_constrain']['constrain_step_dict'] == {}:
-        return ['1', '2']
+        return ['0', '1']
     for node, v in data['sample_constrain']['constrain_step_dict'].items():
         if v['node add'] == {} and v['node conn'] == {}:
             empty_list.append(node)
@@ -232,7 +232,7 @@ def steps_callback_demo_part1(go_next, go_last, current, graph_data):
             return current + 1, []
         else:
             return current, fac.AntdModal(f"Please set related constraints for nodes {empty_list}",
-                                                 title='Download constrain json file Error', centered=True, visible=True)
+                                                 title='Error', centered=True, visible=True)
     elif ctx.triggered[0]['prop_id'].startswith('steps-demo-go-last'):
         return max(current - 1, 0), []
     else:

@@ -47,7 +47,7 @@ similarities_layout = fac.AntdCard(
                 ],
                 defaultValue='target_smiles'),
             label='target_type'),
-            fac.AntdFormItem(fac.AntdInput(id='target_smiles', value='["CC1=CC=C(C=C1)C2=CC(=NN2C3=CC=C(C=C3)S(=O)(=O)N)C(F)(F)F"]'), label="target_smiles"),
+            fac.AntdFormItem(fac.AntdInput(id='target_smiles', value='[CC1=CC=C(C=C1)C2=CC(=NN2C3=CC=C(C=C3)S(=O)(=O)N)C(F)(F)F]'), label="target_smiles"),
             fac.AntdFormItem(fac.AntdInput(id='target_molfile', value='./target_molfile.smi'), label="target_molfile"),
             fac.AntdFormItem(fac.AntdInputNumber(value=0.7, step=0.1, style=number_style), label="tanimoto_k"),
         ],

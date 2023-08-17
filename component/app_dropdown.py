@@ -226,11 +226,11 @@ def toggle_modal(nClicks):
 @app.callback(
     Output('constrain-attr', 'options'),
     Input('select-node', 'value'),
-    State('graph-value-setter-store', 'data'),
+    Input('graph-value-setter-store', 'data'),
     prevent_initial_call=True
 )
 def toggle_modal(select_node, data):
-    options = [constrain_attr_node_add, define_node_conn(node_conn_default_list)]
+    # print('data', data)
     select_node_specific_nodefile = 'specific_nodefile' in data['sample_constrain']['constrain_step_dict'][select_node]['node add'].keys()
     if 'constrain_connect_node_id' in data['sample_constrain']['constrain_step_dict'][select_node]['node conn'].keys():
         parent_node = str(data['sample_constrain']['constrain_step_dict'][select_node]['node conn']['constrain_connect_node_id'][0])

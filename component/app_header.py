@@ -17,7 +17,7 @@ button_Community = dbc.Button(
     outline=True,
     color="primary",
     href="https://github.com/MingyuanXu/TreeInvent-Community/tree/master",
-    id="gh-link",
+    id="gh-link2",
     style={"text-transform": "none"},
 )
 
