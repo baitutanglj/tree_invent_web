@@ -429,7 +429,7 @@ def update_sample_value(rl_nClicks, use_rl_nClicks, similarities_checkbox, activ
             if shape_checkbox and shape_data:
                 weight_list.append(shape_weight)
                 score_components.append('shape')
-                print('shape_data', shape_data)
+                # print('shape_data', shape_data)
                 data.update(shape_data)
             if dockscore_checkbox and dockscore_data:
                 weight_list.append(dockscore_weight)
