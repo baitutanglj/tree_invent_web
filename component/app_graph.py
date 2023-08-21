@@ -70,7 +70,7 @@ graph = cyto.Cytoscape(
 
 graph_card = dbc.Card(
     [
-        dbc.CardHeader(html.H5("Click the 'Add node' or 'Del node' button to to add or remove node in graph")),
+        dbc.CardHeader("Please click the 'Add node' or 'Del node' button to draw a tree-shaped structure"),
         dbc.CardBody(dbc.Col(graph)
                      ),
         dbc.CardFooter(
@@ -88,13 +88,13 @@ graph_card = dbc.Card(
             ]),
         ),
     ],
-    style={"width": "45rem"}
+    style={"width": "44rem"}
 )
 
 graph_data_card = fac.AntdSpace([
     fac.AntdCollapse(
         id='cytoscape-tapNodeData-json',
-        title='constrain that have been added the current node',
+        title='Added constrains for current node',
         children='No node is selected',
         style={
             'width': 700,
@@ -113,7 +113,7 @@ graph_data_card = fac.AntdSpace([
 ])
 
 general_constrain_layout = fac.AntdCollapse(
-    title='general constrain',
+    title='General constrain',
     isOpen=True,
     style=card_style,
     children=fac.AntdForm(
@@ -154,7 +154,7 @@ jsme_modal = html.Div(
                         html.P(['Please click',
                                 fac.AntdAvatar(mode='image', shape='square', src='/assets/imgs/jsme.png'),
                                 'button and click the close button to mark the connected site for the molecule']),
-                        dbc.Button("submit", id="jsme-button", className="ms-auto", n_clicks=0)
+                        dbc.Button("Update value", id="jsme-button", className="ms-auto", n_clicks=0)
                     ]
                 ),
             ],
@@ -182,10 +182,10 @@ graph_layout = dbc.Container(
             jsme_modal,
             # graph_data_card,
             general_constrain_layout,
-            fac.AntdButton(
-                'Download Json File', id='graph-download-button', type='primary',
-                icon=fac.AntdIcon(icon='antd-cloud-download')
-            ),
+            # fac.AntdButton(
+            #     'Download Json File', id='graph-download-button', type='primary',
+            #     icon=fac.AntdIcon(icon='antd-cloud-download')
+            # ),
             dcc.Download(id='graph-download-json'),
             html.Div(id='graph-message'),
             dcc.Store(id='graph-value-setter-store', data=sample_constrain_dict),
@@ -206,34 +206,38 @@ graph_layout = dbc.Container(
 def update_train_value(nClicks, input_data, previous_data):
     data = previous_data
     if nClicks:
-        data["sample_constrain"].update(getter_value(input_data[:-1]))
-        # print('general_constrain_layout callback', data)
-        return data, fac.AntdMessage(content='Update node attribute successfully', type='success')
+        output_dict = getter_value(input_data[:-1])
+        if output_dict is not None:
+            data.update(output_dict)
+            # print('general_constrain_layout callback', data)
+            return data, fac.AntdMessage(content='Update value successfully', type='success')
+        else:
+            return dash.no_update, fac.AntdMessage(content='Please enter the correct value!', type='error')
     else:
         return dash.no_update, []
 
 
 ##======================graph json download============================
-def check_node_data(data):
-    empty_list = []
-    for node, v in data['sample_constrain']['constrain_step_dict'].items():
-        if v['node add'] == {} and v['node conn'] == {}:
-            empty_list.append(node)
-    return empty_list
+# def check_node_data(data):
+#     empty_list = []
+#     for node, v in data['sample_constrain']['constrain_step_dict'].items():
+#         if v['node add'] == {} and v['node conn'] == {}:
+#             empty_list.append(node)
+#     return empty_list
 
 
-@app.callback(
-    Output('graph-download-json', 'data'),
-    Output("graph-message", "children", allow_duplicate=True),
-    Input('graph-download-button', 'nClicks'),
-    State('graph-value-setter-store', 'data'),
-    prevent_initial_call=True,
-)
-def download_func(nClicks, data):
-    empty_list = check_node_data(data)
-    if len(empty_list)>0:
-        return dash.no_update, fac.AntdModal(f"Please set related constraints for node {empty_list}",
-                                             title='Download constrain json file Error', centered=True, visible=True)
-    else:
-        data = json.dumps(data)
-        return dict(content=str(data), filename="sample_constrain.json"), []
+# @app.callback(
+#     Output('graph-download-json', 'data'),
+#     Output("graph-message", "children", allow_duplicate=True),
+#     Input('graph-download-button', 'nClicks'),
+#     State('graph-value-setter-store', 'data'),
+#     prevent_initial_call=True,
+# )
+# def download_func(nClicks, data):
+#     empty_list = check_node_data(data)
+#     if len(empty_list)>0:
+#         return dash.no_update, fac.AntdModal(f"Please set related constraints for node {empty_list}",
+#                                              title='Download constrain json file Error', centered=True, visible=True)
+#     else:
+#         data = json.dumps(data)
+#         return dict(content=str(data), filename="sample_constrain.json"), []

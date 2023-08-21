@@ -7,8 +7,10 @@ import feffery_antd_components as fac
 from dash import html, dcc
 from dash.dependencies import Input, Output, State
 from rdkit import Chem
+import time
 
-from .common_layout import number_style, mol_dir
+from .common_layout import number_style, mol_dir, constrain_number_type, constrain_list_type, constrain_list_list_type, \
+    constrain_dict_type
 
 sys.path.append("..")
 from server import app
@@ -60,7 +62,7 @@ def define_node_conn(node_conn_list):
 
 
 dropdown_card = fac.AntdCollapse(
-    title='Input constrain value for the current node',
+    title='Input constrains value for current node',
     isOpen=True,
     style={
     'width': 700,
@@ -72,11 +74,13 @@ dropdown_card = fac.AntdCollapse(
         id='node-dropdown-input',
         children=[
             fac.AntdFormItem(fac.AntdAlert(message='If you want to add multiple constraints to the selected nodes, '
-                                  'please choose different constraints and input constraint values many times, '
-                                  'and submit multiple times',
+                                  'please choose different constraints and input constraint value many times, '
+                                  'You must click "Update value" button every time to update the value.\n'
+                                 'If you want the current node to participate in molecular generation, '
+                                                   'the force_step attribute must be set to True. ',
                             type='warning',showIcon=True)),
             fac.AntdFormItem(fac.AntdInput(id="select-node", defaultValue="0", disabled=True,style={'width': 500}),
-                             label="current node"),
+                             label="current_node"),
             fac.AntdFormItem(html.Div(id='atom-index'), id='display-atom-index', style={'display': 'none'}),
             fac.AntdFormItem(
                 fac.AntdCascader(id="constrain-attr",
@@ -88,13 +92,25 @@ dropdown_card = fac.AntdCollapse(
                     ),
                 label="constrain"
             ),
+            fac.AntdFormItem(
+                fac.AntdRadioGroup(
+                    id='constrain-state',
+                    defaultValue='add',
+                    options=[
+                        {'label': 'add', 'value': 'add'},
+                        {'label': 'delete', 'value': 'delete'},
+                    ]
+                ),
+                label='constrain_option'
+            ),
+            dcc.Store(id='current-node-value-setter-store', data={}),
             dcc.Store(id='atom-index-value-setter-store', data={}),
             fac.AntdFormItem(id="constrain-item",
                              children=fac.AntdInput(id='constrain-value', placeholder="Input value"),
                              label="constrain_value", style={'display':'block'}),
             fac.AntdFormItem(id="constrain-item2",
                              children=fac.AntdSwitch(id='constrain-value2', checked=True),
-                             label="constrain_value", style={'display':'none'}),
+                             label="constrain value", style={'display':'none'}),
             fac.AntdButton('Update value', id='enter-value-button', type='primary',
                            icon=fac.AntdIcon(icon='antd-check-circle')),
             html.Div(id='graph-dropdown-message')
@@ -115,21 +131,59 @@ dropdown_card = fac.AntdCollapse(
     Output('constrain-item', 'style'),
     Output('constrain-item2', 'style'),
     Input("constrain-attr", "value"),
+    Input("constrain-state", "value"),
     prevent_initial_call=True
 )
-def setter_constrain_value_layout(value):
-    if value[1] in ['max_ring_num_per_node', 'min_ring_num_per_node', 'max_aromatic_rings', 'min_aromatic_rings',
-                    'min_branches', 'max_branches', 'max_heavy_atoms', 'min_heavy_atoms', 'anchor_before']:
-        return fac.AntdInputNumber(id='constrain-value', placeholder="Input value", style=number_style), \
-               {'display':'block'}, {'display':'none'}
-    elif value[1] == 'force_step':
-        return fac.AntdSwitch(id='constrain-value', checked=True), {'display':'none'}, {'display':'block'}
-    else:
+def setter_constrain_value_layout(value, constrain_state):
+    if constrain_state == 'add' and value is not None:
+        if value[1] in constrain_number_type:
+            return fac.AntdInputNumber(id='constrain-value', placeholder="Input value", style=number_style), \
+                   {'display':'block'}, {'display':'none'}
+        elif value[1] == 'force_step':
+            return fac.AntdInput(id='constrain-value', placeholder="Input value"), \
+                   {'display':'none'}, {'display':'block'}
+        else:
+            return fac.AntdInput(id='constrain-value', placeholder="Input value"), \
+                   {'display':'block'}, {'display':'none'}
+    elif constrain_state == 'delete':
         return fac.AntdInput(id='constrain-value', placeholder="Input value"), \
-               {'display':'block'}, {'display':'none'}
+               {'display': 'none'}, {'display': 'none'}
+    else:
+        return dash.no_update, {'display':'block'}, {'display':'none'}
 
+##=====================constrain state=========================
+@app.callback(
+    Output("constrain-state", "value"),
+    Input("enter-value-button", "nClicks"),
+    prevent_initial_call=True
+)
+def setter_constrain_state(nClicks):
+    if nClicks:
+        return 'add'
+    else:
+        return dash.no_update
 
-
+##==================constrain value validateStatus===================
+@app.callback(
+    Output("constrain-item", "help"),
+    Input("constrain-attr", "value"),
+    Input("constrain-value", "value"),
+    prevent_initial_call=True
+)
+def setter_constrain_state(constrain_attr, value):
+    if constrain_attr:
+        if constrain_attr[1] in constrain_number_type:
+            return 'constrain value example: 10'
+        elif constrain_attr[1] == 'constrain_connect_bond_type':
+            return '0, 1, 2 represent single, double, triple bonds, constrain value example: [0,1,2]'
+        elif constrain_attr[1] in constrain_list_type:
+            return 'constrain value example: [1,2,8]'
+        elif constrain_attr[1] in constrain_list_list_type:
+            return 'constrain value example: [[2]]'
+        elif constrain_attr[1] in constrain_dict_type:
+            return "constrain value example: {'C':6,'N':3,'O':2,'F':1,'P':1,'S':1,'Cl':1,'Br':1,'I':1}"
+    else:
+        return None
 
 
 ##=======================show jsme=========================
@@ -157,21 +211,19 @@ def toggle_modal(value):
         return False
 
 ##=======================draw smile callback=========================
-
 @app.callback(
     Output('constrain-value', 'value'),
-    # Output('atom-index', 'children'),
-    Output('atom-index-value-setter-store', 'data'),
+    Output('current-node-value-setter-store', 'data'),
+    Output('atom-index', 'children'),
+    Output('display-atom-index', 'style'),
     Input('jsme-button', 'n_clicks'),
     State('select-node', 'value'),
     State('jsme-graph', 'eventSmiles'),
-    State('atom-index-value-setter-store', 'data'),
     prevent_initial_call=True
 )
-def update_value(jsme_nClicks, select_node, input_smiles, atom_index_data):
+def update_value(jsme_nClicks, select_node, input_smiles):
     ctx = dash.callback_context
     action = ctx.triggered[0]['prop_id']
-    # print('input_smiles', input_smiles, 'action', action)
     if action.startswith('jsme-button') and input_smiles:
         glide_uploadId = str(uuid.uuid1())
         os.makedirs(f"{mol_dir}/{glide_uploadId}")
@@ -179,19 +231,41 @@ def update_value(jsme_nClicks, select_node, input_smiles, atom_index_data):
         mol = Chem.MolFromSmiles(input_smiles)
         num_atoms = mol.GetNumHeavyAtoms()
         atom_index = ','.join([str(i[0]) for i in mol.GetSubstructMatches(Chem.MolFromSmiles('*'))])
-        atom_index_data.update({select_node: {'specific_nodefile': f"{glide_uploadId}/specific_nodefile.sdf",
-                                              'num_atoms': num_atoms, 'atom_index': atom_index}})
+        current_node_data = {select_node: {'specific_nodefile': f"{glide_uploadId}/specific_nodefile.sdf",
+                                              'num_atoms': num_atoms, 'atom_index': atom_index}}
         with Chem.SDWriter(output_path) as f:
             f.write(mol)
-        return f"{glide_uploadId}/specific_nodefile.sdf", atom_index_data
+
+        atom_index_message = fac.AntdAlert(
+            message=f"{current_node_data[select_node]['num_atoms']} atoms in the molecule, "
+                    f"the connected atom id of the molecule: {current_node_data[select_node]['atom_index']}", type='info')
+
+        return f"{glide_uploadId}/specific_nodefile.sdf", current_node_data, atom_index_message, {'display':'block'}
 
     else:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, [], {'display':'none'}
+
+##=================update atom-index-value-setter-store================
+@app.callback(
+    Output('atom-index-value-setter-store', 'data'),
+    Input('enter-value-button', "nClicks"),
+    State('current-node-value-setter-store', 'data'),
+    State('atom-index-value-setter-store', 'data'),
+    prevent_initial_call=True
+)
+def update_data_atom_index_store(nClicks, current_node_data, previous_data):
+    data = previous_data
+    if nClicks:
+        data.update(current_node_data)
+        return data
+    else:
+        return dash.no_update
+
 
 ##=========================display-atom-index==========================
 @app.callback(
-    Output('atom-index', 'children'),
-    Output('display-atom-index', 'style'),
+    Output('atom-index', 'children', allow_duplicate=True),
+    Output('display-atom-index', 'style', allow_duplicate=True),
     Input('select-node', 'value'),
     Input('atom-index-value-setter-store', 'data'),
     prevent_initial_call=True
@@ -199,8 +273,8 @@ def update_value(jsme_nClicks, select_node, input_smiles, atom_index_data):
 def update_value(select_node, atom_index_data):
     if select_node in atom_index_data.keys():
         atom_index_message = fac.AntdAlert(
-            message=f"There are {atom_index_data[select_node]['num_atoms']} atoms in the molecule, "
-                    f"the connected site of the molecule: {atom_index_data[select_node]['atom_index']}", type='info')
+            message=f"{atom_index_data[select_node]['num_atoms']} atoms in the molecule, "
+                    f"the connected atom id of the molecule: {atom_index_data[select_node]['atom_index']}", type='info')
 
         return atom_index_message, {'display':'block'}
     else:
@@ -210,14 +284,19 @@ def update_value(select_node, atom_index_data):
 ##====================clear constrain input===================
 @app.callback(
     Output('constrain-value', 'value', allow_duplicate=True),
+    Output('constrain-attr', 'value'),
+    Output('constrain-item', 'validateStatus', allow_duplicate=True),
     Input('enter-value-button', "nClicks"),
+    Input('cytoscape-elements-callbacks', 'tapNodeData'),
     prevent_initial_call=True
 )
-def toggle_modal(nClicks):
-    if nClicks:
-        return None
+def clear_constrain(nClicks, tapNodeData):
+    if nClicks or tapNodeData:
+        # time.sleep(3)
+        return None, None, None
     else:
         return dash.no_update
+
 
 ##==============setter constrain-arr====================
 # node_conn_list = ["saturation_atomid_list","constrain_connect_atom_id", 'constrain_connect_bond_type',
@@ -254,7 +333,7 @@ def toggle_modal(select_node, data):
                 options = [constrain_attr_node_add, define_node_conn(node_conn_default_list)]
             else:
                 # print('#1 yes, 0 no#')
-                node_conn_list = ["constrain_connect_bond_type", "constrain_connect_atomic_type", "anchor_before"]
+                node_conn_list = ["saturation_atomid_list", "constrain_connect_bond_type", "constrain_connect_atomic_type", "anchor_before"]
                 options = [constrain_attr_node_add, define_node_conn(node_conn_list)]
         else:
             if 'specific_nodefile' in data['sample_constrain']['constrain_step_dict'][parent_node]['node add'].keys():

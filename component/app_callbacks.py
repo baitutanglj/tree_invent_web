@@ -3,7 +3,10 @@ import sys
 import dash
 import feffery_antd_components as fac
 from dash.dependencies import Input, Output, State
-from .common_layout import mol_dir
+
+from .common_layout import mol_dir, constrain_number_type, constrain_list_type, constrain_list_list_type, \
+    constrain_dict_type
+
 sys.path.append("..")
 from server import app
 from .app_graph import edges
@@ -138,12 +141,28 @@ eval_type = [
     "max_anum_per_atomtype", "min_anum_per_atomtype",
     "constrain_connect_node_id", "saturation_atomid_list", "constrain_connect_atom_id",
     'constrain_connect_bond_type', "constrain_connect_atomic_type"]
+
+# constrain_number_type, constrain_list_type, constrain_list_list_type, constrain_dict_type
+
 def define_value(select_attr, input_node_value):
     if select_attr[1] in eval_type:
-        output_value = eval(input_node_value)
+        try:
+            output_value = eval(input_node_value)
+        except:
+            return None
     else:
         output_value = input_node_value
-    return output_value
+
+    if select_attr[1] in constrain_number_type and not isinstance(output_value, int) and not isinstance(output_value, float):
+        return None
+    elif select_attr[1] in constrain_list_type and not isinstance(output_value, list):
+        return None
+    elif select_attr[1] in constrain_list_list_type and not isinstance(output_value, list) and isinstance(output_value[0], list):
+        return None
+    elif select_attr[1] in constrain_dict_type and not isinstance(output_value, dict):
+        return None
+    else:
+        return output_value
 
 def getter_graph_value_dict(current_nodes):
     output_dict = {}
@@ -161,30 +180,57 @@ def getter_graph_value_dict(current_nodes):
               Output('cytoscape-tapNodeData-json', 'children', allow_duplicate=True),
               Output('enter-value-button', "nClicks", allow_duplicate=True),
               Output('graph-dropdown-message', 'children'),
+              Output('constrain-item', 'validateStatus'),
+              # Output('constrain-value', 'value', allow_duplicate=True),
+              # Output('constrain-attr', 'value'),
               Input('enter-value-button', "nClicks"),
               Input('cytoscape-elements-callbacks', 'tapNodeData'),
               State("constrain-attr", "value"),
               State('constrain-value', 'value'),
               State('constrain-value2', 'checked'),
+              State('constrain-state', 'value'),
               State('cytoscape-elements-callbacks', 'elements'),
               prevent_initial_call=True)
-def update_node_attributes(nClicks, tapNodeData, select_attr, node_value, node_checked, elements):
+def update_node_attributes(nClicks, tapNodeData, select_attr, node_value, node_checked, constrain_state, elements):
     graph_dropdown_message = []
+    constrain_value_state = None
     show_data = show_TapNodeData(tapNodeData) if tapNodeData else []
     select_node = tapNodeData["id"] if tapNodeData else "0"
     current_nodes, node_ids = get_current_nodes(elements)
     current_edges, edges_ids = get_current_edges(elements)
     # print('current_nodes', current_nodes)
     if nClicks:
-        if select_attr[1] != 'force_step':
-            # print('select_attr, node_value', select_attr, node_value)
-            current_nodes[int(select_node)]["data"][select_attr[0]][select_attr[1]] = define_value(select_attr, node_value)
+        if select_attr is not None:
+            if constrain_state=='add':
+                if select_attr[1] != 'force_step':
+                    update_node_value = define_value(select_attr, node_value)
+                    if update_node_value is not None:
+                        current_nodes[int(select_node)]["data"][select_attr[0]][select_attr[1]] = update_node_value
+                        graph_dropdown_message = fac.AntdMessage(content='Add node attribute successfully', type='success')
+                        constrain_value_state = 'success'
+                    else:
+                        graph_dropdown_message = fac.AntdMessage(content='Please enter the correct constrain value!', type='error')
+                        # graph_dropdown_message = fac.AntdModal(content='Please enter the correct constrain value!',
+                        #                                        title='Update value error')
+                        constrain_value_state = 'error'
+                else:
+                    current_nodes[int(select_node)]["data"][select_attr[0]][select_attr[1]] = node_checked
+                    graph_dropdown_message = fac.AntdMessage(content='Add node attribute successfully', type='success')
+
+            else:
+                if select_attr[1] in current_nodes[int(select_node)]["data"][select_attr[0]].keys():
+                    current_nodes[int(select_node)]["data"][select_attr[0]].pop(select_attr[1])
+                    graph_dropdown_message = fac.AntdMessage(content='Delete node attribute successfully', type='success')
+                else:
+                    graph_dropdown_message = fac.AntdMessage(
+                        content=f"Constrain attribute:{select_attr[1]} not in current node", type='error')
         else:
-            current_nodes[int(select_node)]["data"][select_attr[0]][select_attr[1]] = node_checked
-        graph_dropdown_message = fac.AntdMessage(content='Update node attribute successfully', type='success')
+            graph_dropdown_message = fac.AntdMessage(content='Please select a constrain!', type='error')
+            return select_node, dash.no_update, show_data, 0, graph_dropdown_message, constrain_value_state
+
         tapNodeData = current_nodes[int(select_node)]['data']
         show_data = show_TapNodeData(tapNodeData)
-    return select_node, current_nodes + current_edges, show_data, 0, graph_dropdown_message
+    return select_node, current_nodes + current_edges, show_data, 0, graph_dropdown_message, constrain_value_state
 
 
 ##===================update graph-value-setter-store=====================
