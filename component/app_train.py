@@ -6,7 +6,7 @@ import json
 import sys
 sys.path.append("..")
 from server import app
-from .common_layout import train_dict, model_input, train_input, system_input, getter_value
+from .common_layout import train_dict, model_input, train_input, system_input, getter_value, success_message, error_message
 
 train_layout = fac.AntdSpace(
     id='train-layout',
@@ -37,9 +37,9 @@ for name in ['model', 'train', 'system']:
             output_dict = getter_value(input_data[:-2])
             if output_dict is not None:
                 data = output_dict
-                return data, fac.AntdMessage(content='Update value Successfully', type='success'), 0
+                return data, success_message, 0
             else:
-                return dash.no_update, fac.AntdMessage(content='Please enter the correct value!', type='error'), 0
+                return dash.no_update, error_message, 0
         else:
             return dash.no_update, [], 0
 

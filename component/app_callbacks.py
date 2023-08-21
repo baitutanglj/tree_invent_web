@@ -5,7 +5,7 @@ import feffery_antd_components as fac
 from dash.dependencies import Input, Output, State
 
 from .common_layout import mol_dir, constrain_number_type, constrain_list_type, constrain_list_list_type, \
-    constrain_dict_type
+    constrain_dict_type, success_message, error_message
 
 sys.path.append("..")
 from server import app
@@ -209,7 +209,7 @@ def update_node_attributes(nClicks, tapNodeData, select_attr, node_value, node_c
                         graph_dropdown_message = fac.AntdMessage(content='Add node attribute successfully', type='success')
                         constrain_value_state = 'success'
                     else:
-                        graph_dropdown_message = fac.AntdMessage(content='Please enter the correct constrain value!', type='error')
+                        graph_dropdown_message = error_message
                         # graph_dropdown_message = fac.AntdModal(content='Please enter the correct constrain value!',
                         #                                        title='Update value error')
                         constrain_value_state = 'error'

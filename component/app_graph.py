@@ -12,7 +12,7 @@ from dash.dependencies import Input, Output, State
 sys.path.append("..")
 from server import app
 from .app_dropdown import dropdown_card
-from .common_layout import card_style, form_style, number_style, getter_value, sample_constrain_dict
+from .common_layout import card_style, form_style, number_style, getter_value, sample_constrain_dict, success_message, error_message
 
 stylesheet = [
     {
@@ -172,11 +172,12 @@ graph_layout = dbc.Container(
         direction='vertical',
         style={'width': '100%'},
         children=[
-            fac.AntdSpace([graph_card,
+            fac.AntdSpace([
                            fac.AntdSpace(
                                [dropdown_card, graph_data_card],
                                direction='vertical'
-                           )
+                           ),
+                            graph_card,
                            ]),
 
             jsme_modal,
@@ -210,9 +211,9 @@ def update_train_value(nClicks, input_data, previous_data):
         if output_dict is not None:
             data.update(output_dict)
             # print('general_constrain_layout callback', data)
-            return data, fac.AntdMessage(content='Update value successfully', type='success')
+            return data, success_message
         else:
-            return dash.no_update, fac.AntdMessage(content='Please enter the correct value!', type='error')
+            return dash.no_update, error_message
     else:
         return dash.no_update, []
 

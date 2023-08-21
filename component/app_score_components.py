@@ -11,7 +11,7 @@ from flask import request
 
 sys.path.append("..")
 from server import app
-from .common_layout import card_style2, form_style, number_style, getter_value, upload_dir
+from .common_layout import card_style2, form_style, number_style, getter_value, upload_dir, success_message, error_message
 
 
 @app.server.route('/upload/', methods=['POST'])
@@ -237,7 +237,7 @@ for name in ["similarities", "activity", "shape", "dockscore"]:
             if data is not None:
                 return False, fac.AntdMessage(content='Submit Successfully!', type='success'), 0
             else:
-                return True, fac.AntdMessage(content='Please enter the correct value!', type='error'), 0
+                return True, error_message, 0
         else:
             return dash.no_update
 

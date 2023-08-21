@@ -6,8 +6,8 @@ import feffery_antd_components as fac
 from dash import html
 
 sys.path.append("..")
-mol_dir = '/home/linjie/projects/dash_projects/tree_invent_web/upload_mol'
-upload_dir = '/home/linjie/projects/dash_projects/tree_invent_web/upload'
+mol_dir = '/mnt/tmp/tree_invent_web_file/upload_sdf/'
+upload_dir = '/mnt/tmp/tree_invent_web_file/upload_glide_keywords/'
 
 constrain_number_type = ['max_ring_num_per_node', 'min_ring_num_per_node', 'max_aromatic_rings', 'min_aromatic_rings',
                         'min_branches', 'max_branches', 'max_heavy_atoms', 'min_heavy_atoms', 'anchor_before']

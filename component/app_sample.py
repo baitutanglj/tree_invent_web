@@ -229,12 +229,12 @@ def steps_callback_demo_part1(go_next, go_last, current, graph_data):
     ctx = dash.callback_context
     if ctx.triggered[0]['prop_id'].startswith('steps-demo-go-next'):
         empty_list = check_node_data(graph_data)
-        return current + 1, []
-        # if len(empty_list) == 0:
-        #     return current + 1, []
-        # else:
-        #     return current, fac.AntdModal(f"Please set related constraints for nodes {empty_list}",
-        #                                          title='Error', centered=True, visible=True)
+        # return current + 1, []
+        if len(empty_list) == 0:
+            return current + 1, []
+        else:
+            return current, fac.AntdModal(f"Please set related constraints for nodes {empty_list}",
+                                                 title='Error', centered=True, visible=True)
     elif ctx.triggered[0]['prop_id'].startswith('steps-demo-go-last'):
         return max(current - 1, 0), []
     else:
@@ -285,13 +285,13 @@ def update_sample_value(general_nClicks, general_data, train_data, graph_data, s
         data = train_data or sample_data
         general_dict = getter_value(general_data[:-1])
         if general_dict is None:
-            return dash.no_update, fac.AntdMessage(content='Please enter the correct value!', type='error')
+            return dash.no_update, error_message
         data['train']['batchsize'] = general_dict['batchsize']
         data['train']['epochs'] = general_dict['epochs']
         data['train']['dataset_path'] = general_dict['dataset_path']
         data['sample_constrain'] = graph_data['sample_constrain']
         # print('add general_setting to data', data)
-        return data, fac.AntdMessage(content='Update value Successfully!', type='success')
+        return data, success_message
     else:
         return dash.no_update, []
 
@@ -439,7 +439,7 @@ def update_sample_value(rl_nClicks, use_rl_nClicks, similarities_checkbox, activ
             data['rl'].update({'score_weights': weight_list})
             # data = json.dumps(data)
             print('final data', data)
-            return data, fac.AntdMessage(content='Update value Successfully!', type='success')
+            return data, success_message
         else:
             return dash.no_update, fac.AntdModal('You must choose at least one scoring component!', title='Update reinforcement learning value Error', centered=True, visible=True)
     else:

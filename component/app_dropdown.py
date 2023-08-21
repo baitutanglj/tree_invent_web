@@ -10,7 +10,7 @@ from rdkit import Chem
 import time
 
 from .common_layout import number_style, mol_dir, constrain_number_type, constrain_list_type, constrain_list_list_type, \
-    constrain_dict_type
+    constrain_dict_type, success_message, error_message
 
 sys.path.append("..")
 from server import app
