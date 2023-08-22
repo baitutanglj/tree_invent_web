@@ -1,19 +1,45 @@
 import json
 import re
 import sys
+import uuid
 from dash import html, dcc
 import feffery_antd_components as fac
 from dash import html
 
 sys.path.append("..")
-mol_dir = '/mnt/tmp/tree_invent_web_file/upload_sdf/'
-upload_dir = '/mnt/tmp/tree_invent_web_file/upload_glide_keywords/'
+upload_dir = "/mnt/tmp/tree_invent_web_file"
+mol_dir = f"{upload_dir}/upload_sdf"
+glide_keywords_dir = f"{upload_dir}/upload_glide_keywords"
+
+similarities_dir = f"{upload_dir}/similarities_dir"
+activity_dir = f"{upload_dir}/activity_dir"
+shape_rocs_dir = f"{upload_dir}/shape_rocs_dir"
+dockscore_dir = f"{upload_dir}/dockscore_dir"
+
+
+def upload_layout(id, filetype, directory=False, buttonContent='upload file'):
+    return fac.AntdUpload(
+        id=id,
+        apiUrl='/upload/',
+        fileMaxSize=1,
+        fileTypes=[filetype],
+        directory=directory,
+        buttonContent=buttonContent,
+        uploadId=str(uuid.uuid1()),
+        locale='en-us',
+        showUploadList=False,
+        # showSuccessMessage=False,
+        # showErrorMessage=False
+    )
+
+
 
 constrain_number_type = ['max_ring_num_per_node', 'min_ring_num_per_node', 'max_aromatic_rings', 'min_aromatic_rings',
                         'min_branches', 'max_branches', 'max_heavy_atoms', 'min_heavy_atoms', 'anchor_before']
 constrain_list_type = ['saturation_atomid_list', 'constrain_connect_atomic_type', 'constrain_connect_bond_type']
 constrain_list_list_type = ['constrain_connect_atom_id']
 constrain_dict_type = ['max_anum_per_atomtype', 'min_anum_per_atomtype']
+constrain_bool_type = ['force_step']
 
 success_message = fac.AntdMessage(content='Update value Successfully!', type='success')
 error_message = fac.AntdMessage(content='Please enter the correct value!', type='error')
@@ -232,6 +258,8 @@ def getter_value(input_data):
         if v is None:
             return None
 
+        v = v.strip() if isinstance(v, str) else v
+
         if k in number_type:
             try:
                 v = int(v)
@@ -242,15 +270,21 @@ def getter_value(input_data):
                     return None
 
         elif k in list_type:
-            try:
-                v = ast.literal_eval(v)
-            except:
+            if v.startswith('['):
+                try:
+                    v = ast.literal_eval(v)
+                except:
+                    return None
+            else:
                 return None
 
         elif k in dict_type:
-            try:
-                v = ast.literal_eval(v)
-            except:
+            if v.startswith('{'):
+                try:
+                    v = ast.literal_eval(v)
+                except:
+                    return None
+            else:
                 return None
 
         elif k in string_type:

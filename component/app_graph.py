@@ -184,7 +184,7 @@ graph_layout = dbc.Container(
             # graph_data_card,
             general_constrain_layout,
             # fac.AntdButton(
-            #     'Download Json File', id='graph-download-button', type='primary',
+            #     'Generate json file', id='graph-download-button', type='primary',
             #     icon=fac.AntdIcon(icon='antd-cloud-download')
             # ),
             dcc.Download(id='graph-download-json'),

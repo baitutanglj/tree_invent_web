@@ -15,7 +15,7 @@ train_layout = fac.AntdSpace(
               train_input,
               system_input,
               fac.AntdButton(
-                  'Download Json File', id='train-download-button', type='primary', icon=fac.AntdIcon(icon='antd-cloud-download')
+                  'Generate json file', id='train-download-button', type='primary', icon=fac.AntdIcon(icon='antd-cloud-download')
               ),
               html.Div(id='train-layout-update-value-message'),
               dcc.Store(id='training-value-setter-store', data=train_dict),

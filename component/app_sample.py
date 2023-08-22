@@ -162,13 +162,14 @@ sample_common_layout_with_rl = [
     dcc.Store(id='sample-constrain-upload-path-store'),
     dcc.Store(id='rl-value-setter-store', data=rl_dict),
     fac.AntdButton(
-        'Download Json File', id='sample-download-button', type='primary',
+        'Generate json file', id='sample-download-button', type='primary',
         icon=fac.AntdIcon(icon='antd-cloud-download'),
         style={'display': 'block'}
     ),
     dcc.Download(id='sample-download-json'),
     html.Div(id='samlpe-layout-update-value-message'),
-    html.Div(id='modal-basic-demo-open')
+    html.Div(id='modal-basic-demo-open'),
+    html.Div(id='upload-callback'),
 ]
 
 sample_common_layout = fac.AntdSpace(

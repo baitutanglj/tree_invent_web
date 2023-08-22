@@ -5,11 +5,10 @@ import feffery_antd_components as fac
 from dash.dependencies import Input, Output, State
 
 from .common_layout import mol_dir, constrain_number_type, constrain_list_type, constrain_list_list_type, \
-    constrain_dict_type, success_message, error_message
+    constrain_dict_type, error_message
 
 sys.path.append("..")
 from server import app
-from .app_graph import edges
 
 
 def get_current_nodes(elements):
@@ -56,30 +55,44 @@ def update_elements(btn_add, btn_remove, tapNodeData, elements):
         current_edges.append(edge_data)
 
     elif int(btn_remove) > int(btn_add) and tapNodeData is not None:
-        if len(current_nodes) > 1:
-            current_nodes.remove({"data": tapNodeData})
-            current_edges = [e for e in current_edges if
-                             e["data"]["source"] != tapNodeData["id"] and e["data"]["target"] != tapNodeData["id"]]
+        print('current_nodes', current_nodes)
+        print('current_edges', current_edges)
+        print('tapNodeData', tapNodeData)
+        current_nodes.remove({"data": tapNodeData})
+        current_edges = [e for e in current_edges if
+                         e["data"]["source"] != tapNodeData["id"] and e["data"]["target"] != tapNodeData["id"]]
 
-        for i in range(len(current_nodes)):
-            if int(current_nodes[i]["data"]["id"]) > int(tapNodeData["id"]):
-                num = int(current_nodes[i]["data"]["id"]) - 1
-                current_nodes[i]["data"]["id"] = str(num)
-                current_nodes[i]["data"]["label"] = str(num)
         current_edges_new = []
-        for i in range(len(current_edges)):
-            current_edges[i]["data"]['index'] = str(i)
-            if int(current_edges[i]["data"]["source"]) > int(tapNodeData["id"]):
-                current_edges[i]["data"]["source"] = str(int(current_edges[i]["data"]["source"]) - 1)
-                current_edges[i]["data"]["constrain_connect_node_id"] = [
-                    int(tapNodeData["id"]) - 1 if node_id == int(tapNodeData["id"]) else node_id for node_id in
-                    current_edges[i]["data"]["constrain_connect_node_id"]]
-                current_edges[i]["data"].pop("id")
-            if int(current_edges[i]["data"]["target"]) > int(tapNodeData["id"]):
-                current_edges[i]["data"]["target"] = str(int(current_edges[i]["data"]["target"]) - 1)
-            if current_edges[i]["data"]["source"] != current_edges[i]["data"]["target"]:
-                current_edges_new.append(current_edges[i])
-        current_edges = current_edges_new
+        for i, edge in enumerate(current_edges):
+            edge = edge.copy()
+            edge["data"]['index'] = str(i)
+            edge["data"].pop("id") if 'id' in edge['data'].keys() else edge["data"]
+            if int(edge["data"]["source"]) > int(tapNodeData["id"]):
+                edge["data"]["source"] = str(int(edge["data"]["source"]) - 1)
+            if int(edge["data"]["target"]) > int(tapNodeData["id"]):
+                edge["data"]["target"] = str(int(edge["data"]["target"]) - 1)
+            if edge["data"]["source"] != edge["data"]["target"]:
+                current_edges_new.append(edge)
+
+        current_nodes_new = []
+        for i, node in enumerate(current_nodes):
+            if int(node["data"]["id"]) > int(tapNodeData["id"]):
+                node['data']['node conn'].pop('constrain_connect_node_id') if 'constrain_connect_node_id' in \
+                                                                              node['data'][
+                                                                                  'node conn'].keys() else node['data'][
+                    'node conn']
+                num = int(node["data"]["id"]) - 1
+                node["data"]["id"] = str(num)
+                node["data"]["label"] = str(num)
+                constrain_connect_node_id = [edge['data']['source'] for edge in current_edges if
+                                             edge['data']['target'] == node["data"]["id"]]
+                if len(constrain_connect_node_id) > 0:
+                    node["data"]['node conn']['constrain_connect_node_id'] = constrain_connect_node_id
+
+            current_nodes_new.append(node)
+
+        current_nodes, current_edges = current_nodes_new, current_edges_new
+
     return current_nodes + current_edges
 
 
@@ -101,12 +114,32 @@ def del_edges(btn_add, btn_remove, tapEdgeData, selectedNodeData, elements):
             current_edges[i]["data"]['index'] = str(i)
 
     elif int(btn_add) > int(btn_remove) and selectedNodeData is not None:
-        edge_index = max(edges_ids) + 1
-        edge_data = edges[0].copy()
-        edge_data["data"]["index"] = str(edge_index)
-        edge_data["data"]["source"] = selectedNodeData[0]["id"]
-        edge_data["data"]["target"] = selectedNodeData[1]["id"]
-        current_edges.append(edge_data)
+        if ('constrain_connect_node_id' in selectedNodeData[0]['node conn'].keys()) and (
+                'constrain_connect_node_id' not in selectedNodeData[1]['node conn'].keys()):
+            edge_index = max(edges_ids) + 1
+            edge_data = {"data": {"index": str(edge_index),
+                                  "source": selectedNodeData[0]["id"],
+                                  "target": selectedNodeData[1]["id"]}}
+            current_edges.append(edge_data)
+
+        elif ('constrain_connect_node_id' not in selectedNodeData[0]['node conn'].keys()) and (
+                'constrain_connect_node_id' in selectedNodeData[1]['node conn'].keys()):
+            edge_index = max(edges_ids) + 1
+            edge_data = {"data": {"index": str(edge_index),
+                                  "source": selectedNodeData[1]["id"],
+                                  "target": selectedNodeData[0]["id"]}}
+            current_edges.append(edge_data)
+
+        elif ('constrain_connect_node_id' not in selectedNodeData[0]['node conn'].keys()) and (
+                'constrain_connect_node_id' not in selectedNodeData[1]['node conn'].keys()):
+            edge_index = max(edges_ids) + 1
+            edge_data = {"data": {"index": str(edge_index),
+                                  "source": selectedNodeData[0]["id"],
+                                  "target": selectedNodeData[1]["id"]}}
+            current_edges.append(edge_data)
+        else:
+            pass
+
     return current_nodes + current_edges
 
 
@@ -144,25 +177,64 @@ eval_type = [
 
 # constrain_number_type, constrain_list_type, constrain_list_list_type, constrain_dict_type
 
-def define_value(select_attr, input_node_value):
-    if select_attr[1] in eval_type:
-        try:
-            output_value = eval(input_node_value)
-        except:
-            return None
-    else:
-        output_value = input_node_value
 
-    if select_attr[1] in constrain_number_type and not isinstance(output_value, int) and not isinstance(output_value, float):
-        return None
-    elif select_attr[1] in constrain_list_type and not isinstance(output_value, list):
-        return None
-    elif select_attr[1] in constrain_list_list_type and not isinstance(output_value, list) and isinstance(output_value[0], list):
-        return None
-    elif select_attr[1] in constrain_dict_type and not isinstance(output_value, dict):
-        return None
-    else:
-        return output_value
+import ast
+
+
+def define_value(select_attr, input_node_value):
+    k, v = select_attr[1], input_node_value
+    if k in constrain_number_type:
+        return v
+
+    elif k in constrain_list_list_type:
+        if v.startswith("[["):
+            try:
+                v = ast.literal_eval(v)
+            except:
+                v = None
+        else:
+            v = None
+
+    elif k in constrain_list_type:
+        if v.startswith("["):
+            try:
+                v = ast.literal_eval(v)
+            except:
+                v = None
+        else:
+            return None
+
+    elif k in constrain_dict_type:
+        if v.startswith('{'):
+            try:
+                v = ast.literal_eval(v)
+            except:
+                v = None
+        else:
+            return None
+
+    return v
+
+
+# def define_value(select_attr, input_node_value):
+#     if select_attr[1] in eval_type:
+#         try:
+#             output_value = eval(input_node_value)
+#         except:
+#             return None
+#     else:
+#         output_value = input_node_value
+#
+#     if select_attr[1] in constrain_number_type and not isinstance(output_value, int) and not isinstance(output_value, float):
+#         return None
+#     elif select_attr[1] in constrain_list_type and not isinstance(output_value, list):
+#         return None
+#     elif select_attr[1] in constrain_list_list_type and not isinstance(output_value, list) and isinstance(output_value[0], list):
+#         return None
+#     elif select_attr[1] in constrain_dict_type and not isinstance(output_value, dict):
+#         return None
+#     else:
+#         return output_value
 
 def getter_graph_value_dict(current_nodes):
     output_dict = {}

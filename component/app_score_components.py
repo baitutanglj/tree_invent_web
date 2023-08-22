@@ -1,17 +1,17 @@
 import json
 import os
 import sys
-import uuid
 
 import dash
 import feffery_antd_components as fac
 from dash import html
 from dash.dependencies import Input, Output, State
 from flask import request
-
+import uuid
 sys.path.append("..")
 from server import app
-from .common_layout import card_style2, form_style, number_style, getter_value, upload_dir, success_message, error_message
+from .common_layout import card_style2, form_style, number_style, \
+    getter_value, error_message, upload_layout, upload_dir, glide_keywords_dir
 
 
 @app.server.route('/upload/', methods=['POST'])
@@ -49,11 +49,14 @@ similarities_layout = fac.AntdCard(
                 ],
                 defaultValue='target_smiles'),
                 label='target_type'),
-            fac.AntdFormItem(fac.AntdInput(id='target_smiles', value=''),
+            fac.AntdFormItem(fac.AntdInput(id='target-smiles', value=''),
                              help='["CC1=CC=C(C=C1)C2=CC(=NN2C3=CC=C(C=C3)S(=O)(=O)N)C(F)(F)F"]',
                              label="target_smiles"),
-            fac.AntdFormItem(fac.AntdInput(id='target_molfile', value=''), help='./target_molfile.smi',
+            fac.AntdFormItem(fac.AntdInput(id='target-molfile', value=''), help='./target_molfile.smi',
                              label="target_molfile"),
+            # fac.AntdFormItem(fac.AntdInput(id='target-mol-dictionary', value=''), help='local absolute target file dictionary',
+            #                  label="target_mol_dictionary"),
+            # fac.AntdFormItem(upload_layout(id='upload-target-molfile', filetype=['smi']), label="target_molfile"),
             fac.AntdFormItem(fac.AntdInputNumber(value=0.7, step=0.1, style=number_style), label="tanimoto_k"),
         ],
         labelCol={'span': 10},
@@ -70,6 +73,9 @@ activity_layout = fac.AntdCard(
         id='activity-input',
         children=[
             fac.AntdFormItem(fac.AntdInput(), help="./activity/SVC.pickle", label="qsar_models_path"),
+            # fac.AntdFormItem(fac.AntdInput(id='qsar-models-dictionary', value=''), help='local absolute qsar models file dictionary',
+            #                              label="qsar_models_dictionary"),
+            # fac.AntdFormItem(upload_layout(id='upload-qsar-models', filetype=['pickle']), label="qsar_models_file")
         ],
         labelCol={'span': 10},
         style=form_style
@@ -86,6 +92,11 @@ shape_layout = fac.AntdCard(
         children=[
             fac.AntdFormItem(fac.AntdInput(value=''), help="./6w8i_ligand.cff", label="cff_path"),
             fac.AntdFormItem(fac.AntdInput(value=''), help="./6w8i_ligand.sdf", label="reflig_sdf_path"),
+            # fac.AntdFormItem(fac.AntdInput(id='rocs-dictionary', value=''),
+            #                  help='local absolute rocs file dictionary',
+            #                  label="rocs_dictionary"),
+            # fac.AntdFormItem(upload_layout(id='upload-cff-file', filetype=['cff']), label="cff_file"),
+            # fac.AntdFormItem(upload_layout(id='upload-reflig-sdf-file', filetype=['sdf']), label="reflig_sdf_file"),
             fac.AntdFormItem(fac.AntdInputNumber(value=0.5, step=0.1, style=number_style), label="shape_w"),
             fac.AntdFormItem(fac.AntdInputNumber(value=0.5, step=0.1, style=number_style), label="color_w"),
             fac.AntdFormItem(fac.AntdRadioGroup(
@@ -107,13 +118,25 @@ vina_layout = html.Div(
     style={'display': 'block'},
     children=[
         fac.AntdFormItem(fac.AntdInputNumber(value=20, style=number_style), label="box_size"),
-        fac.AntdFormItem(fac.AntdInput(value=''), help="target.pdb", label="target_pdb"),
-        fac.AntdFormItem(fac.AntdInput(value=''), help="reflig.pdb", label="reflig_pdb"),
+        # fac.AntdFormItem(fac.AntdInput(value=''), help="target.pdb", label="target_pdb"),
+        # fac.AntdFormItem(fac.AntdInput(value=''), help="reflig.pdb", label="reflig_pdb"),
+        fac.AntdFormItem(upload_layout(id='upload-target-pdb', filetype=['pdb']), label="target_pdb"),
+        fac.AntdFormItem(upload_layout(id='upload-reflig-pdb', filetype=['pdb']), label="reflig_pdb"),
         fac.AntdFormItem(fac.AntdInput(value=''), help="./Tree_Invent/envs/autodock_vina_1_1_2_linux_x86/bin",
                          label="vina_bin_path"),
 
     ],
 )
+
+# glide_layout = html.Div(
+#     id='glide-dockscore-input',
+#     style={'display': 'none'},
+#     children=[
+#         # fac.AntdFormItem(fac.AntdInput(value=''), help="{}", label="glide_flags"),
+#         fac.AntdFormItem(fac.AntdInput(value="2017"), label="glide_ver"),
+#         fac.AntdFormItem(upload_layout(id='upload-glide-input-file', filetype=['in']), label="glide_input_file"),
+#     ],
+# )
 
 glide_layout = html.Div(
     id='glide-dockscore-input',
@@ -137,7 +160,6 @@ glide_layout = html.Div(
             ),
             label='glide_keywords'
         ),
-        html.Div(id='glide-upload-callback'),
     ],
 )
 
@@ -165,7 +187,21 @@ dockscore_layout = fac.AntdCard(
                         defaultValue='AutoDockVina',
                     ),
                         label='backend'),
-                    fac.AntdFormItem(fac.AntdInput(value=''), help="./Tree_Invent/3CLPro/7RFS", label="dock_input_path"),
+                    # fac.AntdFormItem(fac.AntdInput(value=''), help="./Tree_Invent/3CLPro/7RFS", label="dock_input_path"),
+                    fac.AntdFormItem(
+                        fac.AntdUpload(
+                                id='dock-input-path',
+                                apiUrl='/upload/',
+                                fileMaxSize=1,
+                                directory=True,
+                                buttonContent='Upload folder',
+                                uploadId=str(uuid.uuid1()),
+                                locale='en-us',
+                                showUploadList=False,
+                                # showSuccessMessage=False,
+                                # showErrorMessage=False
+                            ),
+                    label="dock_input_path"),
                     fac.AntdFormItem(fac.AntdInput(value=''), help="./Tree_Invent/envs/DockStream",
                                      label="dockstream_root_path"),
                     fac.AntdFormItem(fac.AntdInputNumber(value=-13.0, style=number_style), label="low_threshold"),
@@ -184,8 +220,8 @@ dockscore_layout = fac.AntdCard(
 
 ##==================similarities_layout target type#######################
 @app.callback(
-    Output('target_smiles', 'disabled'),
-    Output('target_molfile', 'disabled'),
+    Output('target-smiles', 'disabled'),
+    Output('target-molfile', 'disabled'),
     Input('target_type', 'value'),
 )
 def modify_similarities_input(target_type):
@@ -363,7 +399,7 @@ def update_score_func(dockscore_general_input, vina_input, glide_input, backend,
                 return None, dash.no_update
             if lastUploadTaskRecord and lastUploadTaskRecord['taskStatus'] == 'success':
                 # print(f"{upload_dir}/{uploadId}/{lastUploadTaskRecord['fileName']}")
-                with open(f"{upload_dir}/{uploadId}/{lastUploadTaskRecord['fileName']}", 'r') as f:
+                with open(f"{glide_keywords_dir}/{uploadId}/{lastUploadTaskRecord['fileName']}", 'r') as f:
                     content = json.load(f)
                     glide_dict['glide_keywords'] = content
             else:
@@ -379,7 +415,7 @@ def update_score_func(dockscore_general_input, vina_input, glide_input, backend,
 ##=====================update sample-value-setter-store by glide dockscore======================
 # =====================upload file server by glide dockscore===========================
 @app.callback(
-    Output('glide-upload-callback', 'children'),
+    Output('upload-callback', 'children'),
     Input('upload-glide-keywords-json', 'lastUploadTaskRecord'),
     prevent_initial_call=True
 )
