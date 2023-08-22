@@ -55,9 +55,9 @@ def update_elements(btn_add, btn_remove, tapNodeData, elements):
         current_edges.append(edge_data)
 
     elif int(btn_remove) > int(btn_add) and tapNodeData is not None:
-        print('current_nodes', current_nodes)
-        print('current_edges', current_edges)
-        print('tapNodeData', tapNodeData)
+        # print('current_nodes', current_nodes)
+        # print('current_edges', current_edges)
+        # print('tapNodeData', tapNodeData)
         current_nodes.remove({"data": tapNodeData})
         current_edges = [e for e in current_edges if
                          e["data"]["source"] != tapNodeData["id"] and e["data"]["target"] != tapNodeData["id"]]
