@@ -7,8 +7,8 @@ import feffery_antd_components as fac
 from dash import html
 
 sys.path.append("..")
-# upload_dir = "/mnt/tmp/tree_invent_web_file"
-upload_dir = "/home/linjie/projects/dash_projects/tree_invent_web/upload"
+upload_dir = "/mnt/tmp/tree_invent_web_file"
+# upload_dir = "/home/linjie/projects/dash_projects/tree_invent_web/upload"
 mol_dir = f"{upload_dir}/upload_sdf"
 glide_keywords_dir = f"{upload_dir}/upload_glide_keywords"
 
