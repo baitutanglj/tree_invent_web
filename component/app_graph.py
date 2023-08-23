@@ -209,8 +209,7 @@ def update_train_value(nClicks, input_data, previous_data):
     if nClicks:
         output_dict = getter_value(input_data[:-1])
         if output_dict is not None:
-            data.update(output_dict)
-            # print('general_constrain_layout callback', data)
+            data['sample_constrain'].update(output_dict)
             return data, success_message
         else:
             return dash.no_update, error_message

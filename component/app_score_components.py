@@ -1,33 +1,91 @@
-import json
 import os
 import sys
 
 import dash
 import feffery_antd_components as fac
+import pandas as pd
 from dash import html
 from dash.dependencies import Input, Output, State
 from flask import request
-import uuid
+
 sys.path.append("..")
 from server import app
 from .common_layout import card_style2, form_style, number_style, \
-    getter_value, error_message, upload_layout, upload_dir, glide_keywords_dir
+    getter_value, error_message, upload_error_message, upload_layout, \
+    dockscore_dir
 
 
-@app.server.route('/upload/', methods=['POST'])
-def upload():
+@app.server.route("/similarities/", methods=['POST'])
+def similarities_upload():
+    uploadId = request.values.get('uploadId')
+    filename = request.files['file'].filename
+    # try:
+    #     os.makedirs(os.path.join(similarities_dir, uploadId))
+    # except FileExistsError:
+    #     pass
+    #
+    # with open(os.path.join(similarities_dir, uploadId, filename), 'wb') as f:
+    #     # 流式写出大型文件，这里的10代表10MB
+    #     for chunk in iter(lambda: request.files['file'].read(1024 * 1024 * 10), b''):
+    #         f.write(chunk)
+    return {'filename': filename}
+
+@app.server.route("/activity/", methods=['POST'])
+def activity_upload():
+    uploadId = request.values.get('uploadId')
+    filename = request.files['file'].filename
+    # try:
+    #     os.makedirs(os.path.join(activity_dir, uploadId))
+    # except FileExistsError:
+    #     pass
+    #
+    # with open(os.path.join(activity_dir, uploadId, filename), 'wb') as f:
+    #     # 流式写出大型文件，这里的10代表10MB
+    #     for chunk in iter(lambda: request.files['file'].read(1024 * 1024 * 10), b''):
+    #         f.write(chunk)
+    return {'filename': filename}
+
+
+@app.server.route("/shape_rocs/", methods=['POST'])
+def shape_rocs_upload():
+    filename = request.files['file'].filename
+    return {'filename': filename}
+
+@app.server.route("/shape_reflig/", methods=['POST'])
+def shape_reflig_upload():
+    filename = request.files['file'].filename
+    return {'filename': filename}
+
+
+@app.server.route("/dockscore/", methods=['POST'])
+def dockscore_upload():
+    uploadId = request.values.get('uploadId')
+    filename = request.files['file'].filename
+    # try:
+    #     os.makedirs(os.path.join(dockscore_dir, uploadId))
+    # except FileExistsError:
+    #     pass
+    #
+    # with open(os.path.join(dockscore_dir, uploadId, filename), 'wb') as f:
+    #     # 流式写出大型文件，这里的10代表10MB
+    #     for chunk in iter(lambda: request.files['file'].read(1024 * 1024 * 10), b''):
+    #         f.write(chunk)
+    return {'filename': filename}
+
+
+@app.server.route("/glide/", methods=['POST'])
+def glide_upload():
     uploadId = request.values.get('uploadId')
     filename = request.files['file'].filename
     try:
-        os.mkdir(os.path.join(upload_dir, uploadId))
+        os.makedirs(os.path.join(dockscore_dir, uploadId))
     except FileExistsError:
         pass
 
-    with open(os.path.join(upload_dir, uploadId, filename), 'wb') as f:
+    with open(os.path.join(dockscore_dir, uploadId, filename), 'wb') as f:
         # 流式写出大型文件，这里的10代表10MB
         for chunk in iter(lambda: request.files['file'].read(1024 * 1024 * 10), b''):
             f.write(chunk)
-
     return {'filename': filename}
 
 
@@ -52,11 +110,14 @@ similarities_layout = fac.AntdCard(
             fac.AntdFormItem(fac.AntdInput(id='target-smiles', value=''),
                              help='["CC1=CC=C(C=C1)C2=CC(=NN2C3=CC=C(C=C3)S(=O)(=O)N)C(F)(F)F"]',
                              label="target_smiles"),
-            fac.AntdFormItem(fac.AntdInput(id='target-molfile', value=''), help='./target_molfile.smi',
+            # fac.AntdFormItem(fac.AntdInput(id='target-molfile', value=''), help='./target_molfile.smi',
+            #                  label="target_molfile"),
+            fac.AntdFormItem(fac.AntdInput(id='target-mol-dictionary', value=''),
+                             help='local absolute target file dictionary',
+                             label="target_mol_dictionary"),
+            fac.AntdFormItem(upload_layout(id='upload-target-molfile', filetype=['smi'], apiurl='/similarities/',
+                                            buttonContent='upload .smi target molfile'),
                              label="target_molfile"),
-            # fac.AntdFormItem(fac.AntdInput(id='target-mol-dictionary', value=''), help='local absolute target file dictionary',
-            #                  label="target_mol_dictionary"),
-            # fac.AntdFormItem(upload_layout(id='upload-target-molfile', filetype=['smi']), label="target_molfile"),
             fac.AntdFormItem(fac.AntdInputNumber(value=0.7, step=0.1, style=number_style), label="tanimoto_k"),
         ],
         labelCol={'span': 10},
@@ -72,10 +133,12 @@ activity_layout = fac.AntdCard(
     children=fac.AntdForm(
         id='activity-input',
         children=[
-            fac.AntdFormItem(fac.AntdInput(), help="./activity/SVC.pickle", label="qsar_models_path"),
-            # fac.AntdFormItem(fac.AntdInput(id='qsar-models-dictionary', value=''), help='local absolute qsar models file dictionary',
-            #                              label="qsar_models_dictionary"),
-            # fac.AntdFormItem(upload_layout(id='upload-qsar-models', filetype=['pickle']), label="qsar_models_file")
+            # fac.AntdFormItem(fac.AntdInput(), help="./activity/SVC.pickle", label="qsar_models_path"),
+            fac.AntdFormItem(fac.AntdInput(id='qsar-models-dictionary', value=''),
+                             help='local absolute qsar models file dictionary',
+                             label="qsar_models_dictionary"),
+            fac.AntdFormItem(upload_layout(id='upload-qsar-models', filetype=['pickle'], apiurl='/activity/',
+                                           buttonContent='upload qsar model pickle file'), label="qsar_models_file")
         ],
         labelCol={'span': 10},
         style=form_style
@@ -90,13 +153,15 @@ shape_layout = fac.AntdCard(
     children=fac.AntdForm(
         id='shape-input',
         children=[
-            fac.AntdFormItem(fac.AntdInput(value=''), help="./6w8i_ligand.cff", label="cff_path"),
-            fac.AntdFormItem(fac.AntdInput(value=''), help="./6w8i_ligand.sdf", label="reflig_sdf_path"),
-            # fac.AntdFormItem(fac.AntdInput(id='rocs-dictionary', value=''),
-            #                  help='local absolute rocs file dictionary',
-            #                  label="rocs_dictionary"),
-            # fac.AntdFormItem(upload_layout(id='upload-cff-file', filetype=['cff']), label="cff_file"),
-            # fac.AntdFormItem(upload_layout(id='upload-reflig-sdf-file', filetype=['sdf']), label="reflig_sdf_file"),
+            # fac.AntdFormItem(fac.AntdInput(value=''), help="./6w8i_ligand.cff", label="cff_path"),
+            # fac.AntdFormItem(fac.AntdInput(value=''), help="./6w8i_ligand.sdf", label="reflig_sdf_path"),
+            fac.AntdFormItem(fac.AntdInput(id='shape-rocs-dictionary', value=''),
+                             help='local absolute rocs file dictionary',
+                             label="shape_rocs_dictionary"),
+            fac.AntdFormItem(upload_layout(id='upload-cff-file', filetype=['cff'], apiurl='/shape_rocs/',
+                                           buttonContent='upload cff file'), label="cff_file"),
+            fac.AntdFormItem(upload_layout(id='upload-reflig-sdf-file', filetype=['sdf'], apiurl='/shape_rocs/',
+                                           buttonContent='upload reflig sdf file'), label="reflig_sdf_file"),
             fac.AntdFormItem(fac.AntdInputNumber(value=0.5, step=0.1, style=number_style), label="shape_w"),
             fac.AntdFormItem(fac.AntdInputNumber(value=0.5, step=0.1, style=number_style), label="color_w"),
             fac.AntdFormItem(fac.AntdRadioGroup(
@@ -120,23 +185,19 @@ vina_layout = html.Div(
         fac.AntdFormItem(fac.AntdInputNumber(value=20, style=number_style), label="box_size"),
         # fac.AntdFormItem(fac.AntdInput(value=''), help="target.pdb", label="target_pdb"),
         # fac.AntdFormItem(fac.AntdInput(value=''), help="reflig.pdb", label="reflig_pdb"),
-        fac.AntdFormItem(upload_layout(id='upload-target-pdb', filetype=['pdb']), label="target_pdb"),
-        fac.AntdFormItem(upload_layout(id='upload-reflig-pdb', filetype=['pdb']), label="reflig_pdb"),
+        fac.AntdFormItem(
+            upload_layout(id='upload-target-pdb', filetype=['pdb'], apiurl='/dockscore/',
+                          buttonContent='upload target pdb file'),
+            label="target_pdb"),
+        fac.AntdFormItem(
+            upload_layout(id='upload-reflig-pdb', filetype=['pdb'], apiurl='/dockscore/',
+                          buttonContent='upload reflig pdb file'),
+            label="reflig_pdb"),
         fac.AntdFormItem(fac.AntdInput(value=''), help="./Tree_Invent/envs/autodock_vina_1_1_2_linux_x86/bin",
                          label="vina_bin_path"),
 
     ],
 )
-
-# glide_layout = html.Div(
-#     id='glide-dockscore-input',
-#     style={'display': 'none'},
-#     children=[
-#         # fac.AntdFormItem(fac.AntdInput(value=''), help="{}", label="glide_flags"),
-#         fac.AntdFormItem(fac.AntdInput(value="2017"), label="glide_ver"),
-#         fac.AntdFormItem(upload_layout(id='upload-glide-input-file', filetype=['in']), label="glide_input_file"),
-#     ],
-# )
 
 glide_layout = html.Div(
     id='glide-dockscore-input',
@@ -144,22 +205,9 @@ glide_layout = html.Div(
     children=[
         # fac.AntdFormItem(fac.AntdInput(value=''), help="{}", label="glide_flags"),
         fac.AntdFormItem(fac.AntdInput(value="2017"), label="glide_ver"),
-        fac.AntdFormItem(fac.AntdInput(value=''), help="glide-grid_4OW0_min.zip", label="grid_path"),
         fac.AntdFormItem(
-            fac.AntdUpload(
-                id='upload-glide-keywords-json',
-                apiUrl='/upload/',
-                fileMaxSize=1,
-                fileTypes=['json'],
-                buttonContent='upload glide keywords json file',
-                uploadId=str(uuid.uuid1()),
-                locale='en-us',
-                showUploadList=False,
-                # showSuccessMessage=False,
-                # showErrorMessage=False
-            ),
-            label='glide_keywords'
-        ),
+            upload_layout(id='upload-glide-input-file', filetype=['in'], apiurl='/glide/', buttonContent='upload glide input file'),
+            label="glide_input_file"),
     ],
 )
 
@@ -187,21 +235,8 @@ dockscore_layout = fac.AntdCard(
                         defaultValue='AutoDockVina',
                     ),
                         label='backend'),
-                    # fac.AntdFormItem(fac.AntdInput(value=''), help="./Tree_Invent/3CLPro/7RFS", label="dock_input_path"),
-                    fac.AntdFormItem(
-                        fac.AntdUpload(
-                                id='dock-input-path',
-                                apiUrl='/upload/',
-                                fileMaxSize=1,
-                                directory=True,
-                                buttonContent='Upload folder',
-                                uploadId=str(uuid.uuid1()),
-                                locale='en-us',
-                                showUploadList=False,
-                                # showSuccessMessage=False,
-                                # showErrorMessage=False
-                            ),
-                    label="dock_input_path"),
+                    fac.AntdFormItem(fac.AntdInput(value=''), help="./Tree_Invent/3CLPro/7RFS",
+                                     label="dock_input_dictionary"),
                     fac.AntdFormItem(fac.AntdInput(value=''), help="./Tree_Invent/envs/DockStream",
                                      label="dockstream_root_path"),
                     fac.AntdFormItem(fac.AntdInputNumber(value=-13.0, style=number_style), label="low_threshold"),
@@ -221,14 +256,15 @@ dockscore_layout = fac.AntdCard(
 ##==================similarities_layout target type#######################
 @app.callback(
     Output('target-smiles', 'disabled'),
-    Output('target-molfile', 'disabled'),
+    Output('target-mol-dictionary', 'disabled'),
+    Output('upload-target-molfile', 'disabled'),
     Input('target_type', 'value'),
 )
 def modify_similarities_input(target_type):
     if target_type == 'target_smiles':
-        return False, True
+        return False, True, True
     else:
-        return True, False
+        return True, False, False
 
 
 ##====================select score components callback===================
@@ -291,29 +327,58 @@ def update_dockscore_backend(backend):
         return {'display': 'none'}, {'display': 'block'}
 
 
+##=====================get_upload_filename======================
+def get_upload_filename(lastUploadTaskRecord):
+    if lastUploadTaskRecord and lastUploadTaskRecord['taskStatus'] == 'success':
+        filename = lastUploadTaskRecord['fileName']
+    else:
+        filename = None
+    return filename
+
+def update_output_dict(dirname, filename, keyname, output_dict, pop_dirname=True, pop_keyname=None):
+    output_dict[keyname] = os.path.join(output_dict[dirname], filename) if dirname != '' else filename
+    if pop_dirname:
+        output_dict.pop(dirname)
+    if pop_keyname:
+        for k in pop_keyname:
+            output_dict.pop(k)
+    return output_dict
+
+
 ##=====================update similarities-value-setter-store======================
 @app.callback(
     Output('similarities-value-setter-store', 'data'),
+    Output('similarities-upload-modal', 'children'),
     Input('target_type', 'value'),
     Input('similarities-modal', 'okCounts'),
     State('similarities-input', 'children'),
+    State('upload-target-molfile', 'lastUploadTaskRecord'),
     prevent_initial_call=True
 )
-def update_score_func(target_type, okCounts, input_data):
+def update_score_func(target_type, okCounts, input_data, lastUploadTaskRecord):
+    upload_file_label = 'target_molfile'
     if target_type == 'target_smiles':
         input_data = [input_data[i] for i in range(len(input_data)) if
-                      input_data[i]['props']['label'] != 'target_molfile']
+                      input_data[i]['props']['label'] not in ['target_mol_dictionary', upload_file_label]]
     else:
         input_data = [input_data[i] for i in range(len(input_data)) if
-                      input_data[i]['props']['label'] != 'target_smiles']
-    # print('input_data=', input_data)
+                      input_data[i]['props']['label'] not in ['target_smiles', upload_file_label]]
+
     if okCounts:
         output_dict = getter_value(input_data)
-        # print('okCounts', okCounts, 'similarities_data', output_dict)
         if output_dict is not None:
-            return output_dict
+            if target_type == 'target_smiles':
+                output_dict.pop('target_type')
+                return output_dict, dash.no_update
+            else:
+                filename = get_upload_filename(lastUploadTaskRecord)
+                if filename is None:
+                    return None, upload_error_message
+                output_dict = update_output_dict('target_mol_dictionary', filename, upload_file_label, output_dict, pop_keyname=['target_type'])
+                # print('okCounts', okCounts, 'similarities_data', output_dict)
+                return output_dict, dash.no_update
         else:
-            return None
+            return None, dash.no_update
     else:
         return dash.no_update
 
@@ -321,18 +386,27 @@ def update_score_func(target_type, okCounts, input_data):
 ##=====================update activity-value-setter-store======================
 @app.callback(
     Output('activity-value-setter-store', 'data'),
+    Output('activity-upload-modal', 'children'),
     Input('activity-input', 'children'),
     Input('activity-modal', 'okCounts'),
+    State('upload-qsar-models', 'lastUploadTaskRecord'),
     prevent_initial_call=True
 )
-def update_score_func(input_data, okCounts):
+def update_score_func(input_data, okCounts, lastUploadTaskRecord):
+    upload_file_label = 'qsar_models_file'
+    input_data = [input_data[i] for i in range(len(input_data)) if
+                  input_data[i]['props']['label'] not in [upload_file_label]]
     if okCounts:
         output_dict = getter_value(input_data)
-        # print('activity_data',output_dict)
+        filename = get_upload_filename(lastUploadTaskRecord)
+        if filename is None:
+            return None, upload_error_message
         if output_dict is not None:
-            return output_dict
+            output_dict = update_output_dict('qsar_models_dictionary', filename, 'qsar_models_path', output_dict)
+            # print('activity_data',output_dict)
+            return output_dict, dash.no_update
         else:
-            return None
+            return None, dash.no_update
     else:
         return dash.no_update
 
@@ -340,19 +414,30 @@ def update_score_func(input_data, okCounts):
 ##=====================update shape-value-setter-store======================
 @app.callback(
     Output('shape-value-setter-store', 'data'),
+    Output('shape-upload-modal', 'children'),
     Input('shape-input', 'children'),
     Input('shape-modal', 'okCounts'),
+    State('upload-cff-file', 'lastUploadTaskRecord'),
+    State('upload-reflig-sdf-file', 'lastUploadTaskRecord'),
     prevent_initial_call=True
 )
-def update_score_func(input_data, okCounts):
+def update_score_func(input_data, okCounts, cff_lastUploadTaskRecord, reflig_lastUploadTaskRecord):
+    upload_file_label = ['cff_file', 'reflig_sdf_file']
+    input_data = [input_data[i] for i in range(len(input_data)) if
+                  input_data[i]['props']['label'] not in upload_file_label]
     if okCounts:
-        # print('input_data', input_data)
         output_dict = getter_value(input_data)
-        # print('rocs',output_dict)
+        filename_cff = get_upload_filename(cff_lastUploadTaskRecord)
+        filename_reflig = get_upload_filename(reflig_lastUploadTaskRecord)
+        if filename_cff is None or filename_reflig is None:
+            return None, upload_error_message
         if output_dict is not None:
-            return {'rocs': output_dict}
+            output_dict = update_output_dict('shape_rocs_dictionary', filename_cff, 'cff_path', output_dict, False)
+            output_dict = update_output_dict('shape_rocs_dictionary', filename_reflig, 'reflig_sdf_path', output_dict)
+            # print('rocs',output_dict)
+            return {'rocs': output_dict}, dash.no_update
         else:
-            return None
+            return None, dash.no_update
     else:
         return dash.no_update
 
@@ -360,30 +445,26 @@ def update_score_func(input_data, okCounts):
 ##=====================update dockscore-value-setter-store======================
 @app.callback(
     Output('dockscore-value-setter-store', 'data'),
-    Output('glide-Collapse-callback', 'children'),
+    Output('dockscore-upload-modal', 'children'),
     Input('dockscore-general-input', 'children'),
     Input('vina-dockscore-input', 'children'),
     Input('glide-dockscore-input', 'children'),
     Input('dockscore-backend', 'value'),
     Input('dockscore-modal', 'okCounts'),
-    State('upload-glide-keywords-json', 'uploadId'),
-    State('upload-glide-keywords-json', 'lastUploadTaskRecord'),
-    State('upload-glide-keywords-json', 'listUploadTaskRecord'),
+    State('upload-target-pdb', 'lastUploadTaskRecord'),
+    State('upload-reflig-pdb', 'lastUploadTaskRecord'),
+    State('upload-glide-input-file', 'lastUploadTaskRecord'),
     prevent_initial_call=True
 )
-def update_score_func(dockscore_general_input, vina_input, glide_input, backend, okCounts, uploadId,
-                      lastUploadTaskRecord, listUploadTaskRecord):
+def update_score_func(dockscore_general_input, vina_input, glide_input, backend, okCounts,
+                      target_lastUploadTaskRecord, reflig_lastUploadTaskRecord, glide_lastUploadTaskRecord):
+    upload_file_label = ['target_pdb', 'reflig_pdb', 'glide_input_file']
     if backend == 'AutoDockVina':
-        dockscore_general_input = [i for i in dockscore_general_input if
-                                   i['props']['label'] not in ['glide_flags', 'glide_ver', 'grid_path',
-                                                               'glide_keywords']]
+        vina_input = [i for i in vina_input if i['props']['label'] not in upload_file_label]
 
     else:
-        dockscore_general_input = [i for i in dockscore_general_input if
-                                   i['props']['label'] not in ['AutoDockVina', 'target_pdb', 'reflig_pdb',
-                                                               'vina_bin_path']]
+        glide_input = [i for i in vina_input if i['props']['label'] not in upload_file_label]
     if okCounts:
-        # print('dockscore_general_input', dockscore_general_input)
         output_dict = getter_value(dockscore_general_input)
         if output_dict is None:
             return None, dash.no_update
@@ -392,38 +473,75 @@ def update_score_func(dockscore_general_input, vina_input, glide_input, backend,
             if vina_dict is None:
                 return None, dash.no_update
             output_dict.update(vina_dict)
+            filename_target = get_upload_filename(target_lastUploadTaskRecord)
+            filename_reflig = get_upload_filename(reflig_lastUploadTaskRecord)
+            if filename_target is None or filename_reflig is None:
+                return None, upload_error_message
+            output_dict = update_output_dict('', filename_target, 'cff_path', output_dict, False)
+            output_dict = update_output_dict('', filename_reflig, 'reflig_sdf_path', output_dict, False)
         else:
-            # print('glide_input[:2]', glide_input[:2])
-            glide_dict = getter_value(glide_input[:2])
+            glide_dict = getter_value(glide_input[:1])
             if glide_dict is None:
                 return None, dash.no_update
-            if lastUploadTaskRecord and lastUploadTaskRecord['taskStatus'] == 'success':
-                # print(f"{upload_dir}/{uploadId}/{lastUploadTaskRecord['fileName']}")
-                with open(f"{glide_keywords_dir}/{uploadId}/{lastUploadTaskRecord['fileName']}", 'r') as f:
-                    content = json.load(f)
-                    glide_dict['glide_keywords'] = content
-            else:
-                return None, fac.AntdModal('Please upload glide keywords json file', title='Submit failure',
-                                                     centered=True, visible=True)
             output_dict.update(glide_dict)
-        # print(output_dict)
+            if glide_lastUploadTaskRecord and glide_lastUploadTaskRecord['taskStatus'] == 'success':
+                filepath = f"{dockscore_dir}/{glide_lastUploadTaskRecord['taskId']}/{glide_lastUploadTaskRecord['fileName']}"
+                data = pd.read_csv(filepath, names=['key', 'value'], header=None, sep='   ', engine='python')
+                data['value'] = data['value'].apply(lambda x: x.replace('\"', '') if x is not None else x)
+                if len(data.loc[data['key']=='GRIDFILE','value'])>0:
+                    gridfile = data.loc[data['key']=='GRIDFILE','value'].values[0].rsplit('/', maxsplit=1)[1]
+                    if gridfile:
+                        output_dict.update({'grid_path': gridfile})
+                    else:
+                        return None, upload_error_message
+                else:
+                    return None, fac.AntdModal('Glide input file must contain "gridfile" information', title='Submit failure',
+                                 centered=True, visible=True)
+
+                key_index = list(data[data['key'].str.contains('\[')].index)
+                if len(key_index)>0:
+                    key_steps = [[key_index[i], key_index[i + 1]] for i in range(len(key_index) - 1)]
+                    glide_keywords_dict = {}
+                    for step in key_steps:
+                        k = data.loc[step[0], 'key']
+                        glide_keywords_dict[k] = {}
+                        for i in range(step[0] + 1, step[1]):
+                            glide_keywords_dict[k][data.loc[i, 'key']] = data.loc[i, 'value']
+                    if len(glide_keywords_dict)>0:
+                        output_dict.update({'glide_keywords': glide_keywords_dict})
+
+
         return {'docking': output_dict}, dash.no_update
     else:
         return dash.no_update, dash.no_update
 
 
 ##=====================update sample-value-setter-store by glide dockscore======================
-# =====================upload file server by glide dockscore===========================
-@app.callback(
-    Output('upload-callback', 'children'),
-    Input('upload-glide-keywords-json', 'lastUploadTaskRecord'),
-    prevent_initial_call=True
-)
-def show_upload_status(lastUploadTaskRecord):
-    if lastUploadTaskRecord['taskStatus'] == 'success':
-        return fac.AntdProgress(percent=100, style={'width': 200, 'left': '40%'})
-    else:
-        return fac.AntdMessage(content='Upload Error', type='error')
+# =====================upload file server===========================
+for id_name in ['upload-target-molfile', 'upload-qsar-models', 'upload-cff-file',
+                'upload-target-pdb', 'upload-glide-input-file']:
+    @app.callback(
+        Output(f"{id_name}-progress", 'children', allow_duplicate=True),
+        Input(id_name, 'lastUploadTaskRecord'),
+        prevent_initial_call=True
+    )
+    def show_upload_status(lastUploadTaskRecord):
+        if lastUploadTaskRecord['taskStatus'] == 'success':
+            return fac.AntdProgress(percent=100, style={'width': 200})
+        else:
+            return fac.AntdMessage(content='Upload Error', type='error')
+
+for id_name in ['upload-reflig-sdf-file', 'upload-reflig-pdb']:
+    @app.callback(
+        Output(f"{id_name}-progress", 'children', allow_duplicate=True),
+        Input(id_name, 'lastUploadTaskRecord'),
+        prevent_initial_call=True
+    )
+    def show_upload_status(lastUploadTaskRecord):
+        if lastUploadTaskRecord['taskStatus'] == 'success':
+            return fac.AntdProgress(percent=100, style={'width': 200})
+        else:
+            return fac.AntdMessage(content='Upload Error', type='error')
 
 
 for name in ["similarities", "activity", "shape", "dockscore"]:

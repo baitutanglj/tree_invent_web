@@ -79,7 +79,9 @@ def set_score_components(score_name, score_title, score_layout, score_dict):
             centered=True,
             width='60vw'
         ),
-        dcc.Store(id=f"{score_name}-value-setter-store", data=score_dict)
+        dcc.Store(id=f"{score_name}-value-setter-store", data=score_dict),
+        html.Div(id=f"{score_name}-upload-modal"),
+        # html.Div(id=f"{score_name}-upload-progress"),
     ])
     return components
 
@@ -230,12 +232,12 @@ def steps_callback_demo_part1(go_next, go_last, current, graph_data):
     ctx = dash.callback_context
     if ctx.triggered[0]['prop_id'].startswith('steps-demo-go-next'):
         empty_list = check_node_data(graph_data)
-        # return current + 1, []
-        if len(empty_list) == 0:
-            return current + 1, []
-        else:
-            return current, fac.AntdModal(f"Please set related constraints for nodes {empty_list}",
-                                                 title='Error', centered=True, visible=True)
+        return current + 1, []
+        # if len(empty_list) == 0:
+        #     return current + 1, []
+        # else:
+        #     return current, fac.AntdModal(f"Please set related constraints for nodes {empty_list}",
+        #                                          title='Error', centered=True, visible=True)
     elif ctx.triggered[0]['prop_id'].startswith('steps-demo-go-last'):
         return max(current - 1, 0), []
     else:
@@ -276,25 +278,48 @@ def initialize_general_input(general_input, train_data):
     Output('samlpe-layout-update-value-message', 'children', allow_duplicate=True),
     Input('general-button', 'nClicks'),
     Input('general-input', 'children'),
-    State('training-value-setter-store', 'data'),
-    State('graph-value-setter-store', 'data'),
     State('sample-value-setter-store', 'data'),
     prevent_initial_call=True,
 )
-def update_sample_value(general_nClicks, general_data, train_data, graph_data, sample_data):
+def update_sample_value(general_nClicks, general_data, previous_data):
     if general_nClicks:
-        data = train_data or sample_data
+        data = previous_data
         general_dict = getter_value(general_data[:-1])
         if general_dict is None:
             return dash.no_update, error_message
         data['train']['batchsize'] = general_dict['batchsize']
         data['train']['epochs'] = general_dict['epochs']
         data['train']['dataset_path'] = general_dict['dataset_path']
-        data['sample_constrain'] = graph_data['sample_constrain']
-        # print('add general_setting to data', data)
+        print(data)
         return data, success_message
     else:
         return dash.no_update, []
+
+
+# @app.callback(
+#     Output('sample-value-setter-store', 'data', allow_duplicate=True),
+#     Output('samlpe-layout-update-value-message', 'children', allow_duplicate=True),
+#     Input('general-button', 'nClicks'),
+#     Input('general-input', 'children'),
+#     State('training-value-setter-store', 'data'),
+#     State('graph-value-setter-store', 'data'),
+#     State('sample-value-setter-store', 'data'),
+#     prevent_initial_call=True,
+# )
+# def update_sample_value(general_nClicks, general_data, train_data, graph_data, sample_data):
+#     if general_nClicks:
+#         data = train_data or sample_data
+#         general_dict = getter_value(general_data[:-1])
+#         if general_dict is None:
+#             return dash.no_update, error_message
+#         data['train']['batchsize'] = general_dict['batchsize']
+#         data['train']['epochs'] = general_dict['epochs']
+#         data['train']['dataset_path'] = general_dict['dataset_path']
+#         data['sample_constrain'] = graph_data['sample_constrain']
+#         # print('add general_setting to data', data)
+#         return data, success_message
+#     else:
+#         return dash.no_update, []
 
 
 ##====================download sample_model.json============================

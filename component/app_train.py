@@ -121,4 +121,13 @@ def download_func(nClicks, data):
     return dict(content=str(data), filename="train_model.json")
 
 
-
+@app.callback(
+    Output('sample-value-setter-store', 'data', allow_duplicate=True),
+    Input('training-value-setter-store', 'data'),
+    State('sample-value-setter-store', 'data'),
+    prevent_initial_call=True
+)
+def update_graph_value(train_data, previous_data):
+    data = previous_data
+    data.update(train_data)
+    return data

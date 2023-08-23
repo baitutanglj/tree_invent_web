@@ -31,7 +31,7 @@ app.layout = html.Div([
     header,
     dcc.Tabs(
         id="app-tabs",
-        value="tab1",
+        value="tab2",
         className="custom-tabs",
         children=[
             dcc.Tab(

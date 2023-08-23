@@ -47,7 +47,7 @@ def update_elements(btn_add, btn_remove, tapNodeData, elements):
     if int(btn_add) > int(btn_remove) and tapNodeData is not None:
         node_id = max(node_ids) + 1
         node_data = {'data': {'id': str(node_id), 'label': str(node_id), 'node add': {},
-                              'node conn': {'constrain_connect_node_id': tapNodeData["id"]}}}
+                              'node conn': {'constrain_connect_node_id': [int(tapNodeData["id"])]}}}
         current_nodes.append(node_data)
 
         edge_index = max(edges_ids) + 1 if len(edges_ids) > 0 else 0
@@ -317,6 +317,21 @@ def update_graph_value(elements, previous_data):
     current_nodes, node_ids = get_current_nodes(elements)
     data['sample_constrain']['constrain_step_dict'].update(getter_graph_value_dict(current_nodes))
     return data
+
+
+
+@app.callback(
+    Output('sample-value-setter-store', 'data', allow_duplicate=True),
+    Input('graph-value-setter-store', 'data'),
+    State('sample-value-setter-store', 'data'),
+    prevent_initial_call=True
+)
+def update_graph_value(graph_data, previous_data):
+    data = previous_data
+    data.update(graph_data)
+    return data
+
+
 
 
 

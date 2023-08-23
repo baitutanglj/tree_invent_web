@@ -7,7 +7,8 @@ import feffery_antd_components as fac
 from dash import html
 
 sys.path.append("..")
-upload_dir = "/mnt/tmp/tree_invent_web_file"
+# upload_dir = "/mnt/tmp/tree_invent_web_file"
+upload_dir = "/home/linjie/projects/dash_projects/tree_invent_web/upload"
 mol_dir = f"{upload_dir}/upload_sdf"
 glide_keywords_dir = f"{upload_dir}/upload_glide_keywords"
 
@@ -17,20 +18,21 @@ shape_rocs_dir = f"{upload_dir}/shape_rocs_dir"
 dockscore_dir = f"{upload_dir}/dockscore_dir"
 
 
-def upload_layout(id, filetype, directory=False, buttonContent='upload file'):
-    return fac.AntdUpload(
+def upload_layout(id, filetype, apiurl, buttonContent='upload file'):
+    output_layout = fac.AntdUpload(
         id=id,
-        apiUrl='/upload/',
+        apiUrl=apiurl,
         fileMaxSize=1,
-        fileTypes=[filetype],
-        directory=directory,
+        fileTypes=filetype,
         buttonContent=buttonContent,
         uploadId=str(uuid.uuid1()),
         locale='en-us',
         showUploadList=False,
-        # showSuccessMessage=False,
-        # showErrorMessage=False
+        showSuccessMessage=False,
+        showErrorMessage=False
     )
+    upload_progress = html.Div(id=f"{id}-progress")
+    return [output_layout, upload_progress]
 
 
 
@@ -43,6 +45,8 @@ constrain_bool_type = ['force_step']
 
 success_message = fac.AntdMessage(content='Update value Successfully!', type='success')
 error_message = fac.AntdMessage(content='Please enter the correct value!', type='error')
+upload_error_message = fac.AntdModal('Please upload the correct file', title='Submit failure',
+                                     centered=True, visible=True)
 
 
 card_style = {
@@ -235,7 +239,7 @@ number_type = ['acc_steps', 'max_gen_atoms', 'tanimoto_k', 'shape_w', 'color_w',
                'ncores', 'nposes', 'batchsize', 'epochs', 'max_node_steps', 'max_ring_nodes', 'temp']
 string_type = ['qsar_models_path', 'cff_path', 'reflig_sdf_path', 'dock_input_path', 'dockstream_root_path',
                'AutoDockVina', 'target_pdb', 'reflig_pdb', 'vina_bin_path', 'grid_path', 'dataset_path',
-               'target_molfile',
+               'target_molfile', 'target_mol_dictionary', 'qsar_models_dictionary', 'shape_rocs_dictionary'
                'target_type', 'sim_measure', 'backend', 'constrain_option', 'ring_check_mode', 'temperature_scheduler',
                'rearrange_molgraph_mode', 'ring_check_mode', 'device']
 list_type = ['target_smiles']
