@@ -16,6 +16,7 @@ similarities_dir = f"{upload_dir}/similarities_dir"
 activity_dir = f"{upload_dir}/activity_dir"
 shape_rocs_dir = f"{upload_dir}/shape_rocs_dir"
 dockscore_dir = f"{upload_dir}/dockscore_dir"
+sample_dir = f"{upload_dir}/sample_dir"
 
 
 def upload_layout(id, filetype, apiurl, buttonContent='upload file'):
@@ -178,27 +179,27 @@ system_input = fac.AntdCollapse(
     children=fac.AntdForm(
         id='system-input',
         children=[
-            fac.AntdFormItem(fac.AntdInputNumber(id="max_atoms", value=38, disabled=True, style=number_style),
+            fac.AntdFormItem(fac.AntdInputNumber(id="max_atoms", value=38, style=number_style),
                              label="max_atoms"),
             fac.AntdFormItem(
-                fac.AntdInputNumber(id='max_cliques', value=0.95, disabled=True, step=0.01, style=number_style),
+                fac.AntdInputNumber(id='max_cliques', value=42, style=number_style),
                 label='max_cliques'),
-            fac.AntdFormItem(fac.AntdInputNumber(id='max_rings', value=8, disabled=True, style=number_style),
+            fac.AntdFormItem(fac.AntdInputNumber(id='max_rings', value=8, style=number_style),
                              label='max_rings'),
-            fac.AntdFormItem(fac.AntdInputNumber(id='max_ring_size', value=34, disabled=True, style=number_style),
+            fac.AntdFormItem(fac.AntdInputNumber(id='max_ring_size', value=34, style=number_style),
                              label='max_ring_size'),
-            fac.AntdFormItem(fac.AntdInputNumber(id='max_ring_states', value=62, disabled=True, style=number_style),
+            fac.AntdFormItem(fac.AntdInputNumber(id='max_ring_states', value=62, style=number_style),
                              label='max_ring_states'),
-            fac.AntdFormItem(fac.AntdInputNumber(id="max_node_add_states", value=42, disabled=True, style=number_style),
+            fac.AntdFormItem(fac.AntdInputNumber(id="max_node_add_states", value=42, style=number_style),
                              label="max_node_add_states"),
             fac.AntdFormItem(
-                fac.AntdInputNumber(id='max_node_connect_states', value=42, disabled=True, style=number_style),
+                fac.AntdInputNumber(id='max_node_connect_states', value=42, style=number_style),
                 label='max_node_connect_states'),
             fac.AntdFormItem(
-                fac.AntdInputNumber(id='ring_cover_rate', value=0.97, step=0.01, disabled=True, style=number_style),
+                fac.AntdInputNumber(id='ring_cover_rate', value=0.97, step=0.01, style=number_style),
                 label='ring_cover_rate'),
             fac.AntdButton('Update value', id='system-button', type='primary',
-                           icon=fac.AntdIcon(icon='antd-check-circle'), disabled=True),
+                           icon=fac.AntdIcon(icon='antd-check-circle')),
             dcc.Store(id='system-value-setter-store', data=train_dict['system'])
         ],
         labelCol={'span': 10},
@@ -236,12 +237,13 @@ sample_constrain_input = fac.AntdCollapse(
 import ast
 
 number_type = ['acc_steps', 'max_gen_atoms', 'tanimoto_k', 'shape_w', 'color_w', 'low_threshold', 'high_threshold', 'k',
-               'ncores', 'nposes', 'batchsize', 'epochs', 'max_node_steps', 'max_ring_nodes', 'temp']
+               'ncores', 'nposes', 'batchsize', 'epochs', 'max_node_steps', 'max_ring_nodes', 'temp',
+               'max_atoms', 'max_cliques', 'max_rings', 'max_ring_size', 'max_ring_states', 'max_node_add_states', 'max_node_connect_states', 'ring_cover_rate']
 string_type = ['qsar_models_path', 'cff_path', 'reflig_sdf_path', 'dock_input_path', 'dockstream_root_path',
                'AutoDockVina', 'target_pdb', 'reflig_pdb', 'vina_bin_path', 'grid_path', 'dataset_path',
                'target_molfile', 'target_mol_dictionary', 'qsar_models_dictionary', 'shape_rocs_dictionary'
                'target_type', 'sim_measure', 'backend', 'constrain_option', 'ring_check_mode', 'temperature_scheduler',
-               'rearrange_molgraph_mode', 'ring_check_mode', 'device']
+               'rearrange_molgraph_mode', 'ring_check_mode', 'device', 'specific_nodefile']
 list_type = ['target_smiles']
 dict_type = ['glide_flags']
 
@@ -251,7 +253,7 @@ def getter_value(input_data):
 
     for i in range(len(input_data)):
         k = input_data[i]['props']['label']
-        # print(k)
+        # print('k', k)
         if 'value' in input_data[i]['props']['children']['props'].keys():
             v = input_data[i]['props']['children']['props']['value']
         elif 'checked' in input_data[i]['props']['children']['props']:
@@ -265,13 +267,14 @@ def getter_value(input_data):
         v = v.strip() if isinstance(v, str) else v
 
         if k in number_type:
-            try:
-                v = int(v)
-            except:
-                try:
-                    v = float(v)
-                except:
-                    return None
+            v = v
+            # try:
+            #     v = int(v)
+            # except:
+            #     try:
+            #         v = float(v)
+            #     except:
+            #         return None
 
         elif k in list_type:
             if v.startswith('['):

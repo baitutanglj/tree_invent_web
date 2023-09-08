@@ -468,6 +468,7 @@ def update_score_func(dockscore_general_input, vina_input, glide_input, backend,
         output_dict = getter_value(dockscore_general_input)
         if output_dict is None:
             return None, dash.no_update
+        output_dict['dock_input_path'] = output_dict.pop('dock_input_dictionary')
         if output_dict['backend'] == 'AutoDockVina':
             vina_dict = getter_value(vina_input)
             if vina_dict is None:
@@ -509,6 +510,9 @@ def update_score_func(dockscore_general_input, vina_input, glide_input, backend,
                             glide_keywords_dict[k][data.loc[i, 'key']] = data.loc[i, 'value']
                     if len(glide_keywords_dict)>0:
                         output_dict.update({'glide_keywords': glide_keywords_dict})
+            else:
+                return None, upload_error_message
+
 
 
         return {'docking': output_dict}, dash.no_update
@@ -542,6 +546,12 @@ for id_name in ['upload-reflig-sdf-file', 'upload-reflig-pdb']:
             return fac.AntdProgress(percent=100, style={'width': 200})
         else:
             return fac.AntdMessage(content='Upload Error', type='error')
+
+
+
+
+
+
 
 
 for name in ["similarities", "activity", "shape", "dockscore"]:

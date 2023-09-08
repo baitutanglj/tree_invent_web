@@ -1,3 +1,4 @@
+import os
 import json
 import sys
 
@@ -10,12 +11,13 @@ from dash.dependencies import Input, Output, State
 sys.path.append("..")
 from server import app
 from .common_layout import train_dict, sample_constrain_dict, card_style, card_style_hide, \
-    form_style, number_style, getter_value, success_message, error_message
+    form_style, number_style, getter_value, success_message, error_message, upload_dir, sample_dir
 from .app_score_components import similarities_layout, activity_layout, \
     shape_layout, dockscore_layout
 from .app_graph import graph_layout
-
-
+from flask import send_from_directory
+import uuid
+import zipfile
 
 sample_dict = train_dict.copy()
 sample_dict.update(sample_constrain_dict)
@@ -37,8 +39,8 @@ general_value_card = fac.AntdCard(
             children=[
                 fac.AntdFormItem(fac.AntdInputNumber(value=1000, style=number_style),
                                  label="batchsize"),
-                fac.AntdFormItem(fac.AntdInputNumber(value=1000, style=number_style), label='epochs'),
-                fac.AntdFormItem(fac.AntdInput(value='./datasets'), help='./datasets', label='dataset_path'),
+                fac.AntdFormItem(fac.AntdInputNumber(value=0.0001, step=0.0001, style=number_style), label='initlr'),
+                # fac.AntdFormItem(fac.AntdInput(value='./datasets'), help='./datasets', label='dataset_path'),
                 fac.AntdButton('Update value', id='general-button', type='primary',
                                icon=fac.AntdIcon(icon='antd-check-circle'))
 
@@ -106,7 +108,7 @@ rl_value_card = fac.AntdCollapse(
                             {'label': 'same', 'value': 'same'},
                             {'label': 'linear', 'value': 'linear'}
                         ],
-                        defaultValue='linear'
+                        defaultValue='same'
                     ),
                         label='temperature_scheduler'),
                     fac.AntdFormItem(
@@ -164,9 +166,9 @@ sample_common_layout_with_rl = [
     dcc.Store(id='sample-constrain-upload-path-store'),
     dcc.Store(id='rl-value-setter-store', data=rl_dict),
     fac.AntdButton(
-        'Generate json file', id='sample-download-button', type='primary',
+        'Generate sample setting file', id='sample-download-button', type='primary',
         icon=fac.AntdIcon(icon='antd-cloud-download'),
-        style={'display': 'block'}
+        style={'display': 'block'},
     ),
     dcc.Download(id='sample-download-json'),
     html.Div(id='samlpe-layout-update-value-message'),
@@ -180,83 +182,6 @@ sample_common_layout = fac.AntdSpace(
     children=sample_common_layout_with_rl
 )
 
-##===================step header========================
-step_layout = html.Div([
-    fac.AntdSteps(
-        id='steps-demo',
-        steps=[
-            {'title': 'Generate topology constrain'},
-            {'title': 'Sample model'}
-        ],
-        direction='horizontal',
-        type='navigation'
-    ),
-    fac.AntdDivider(isDashed=True),
-    fac.AntdButton('Previous step', id='steps-demo-go-last', type='primary'),
-    fac.AntdDivider(direction='vertical'),
-    fac.AntdButton('Next step', id='steps-demo-go-next', type='primary'),
-    fac.AntdDivider(direction='vertical'),
-    # fac.AntdButton('reset', id='steps-demo-restart', type='primary'),
-    fac.AntdDivider(isDashed=True),
-    html.Div(id='steps-demo-current', children=dbc.Container(sample_common_layout)),
-    html.Div(id='steps-demo-first', children=graph_layout)
-])
-
-# =================finally layout====================
-sample_layout = html.Div(
-    children=[step_layout]
-)
-
-
-
-# ===================step swap callback========================
-def check_node_data(data):
-    empty_list = []
-    if data['sample_constrain']['constrain_step_dict'] == {}:
-        return ['0', '1']
-    for node, v in data['sample_constrain']['constrain_step_dict'].items():
-        if v['node add'] == {} and v['node conn'] == {}:
-            empty_list.append(node)
-    return empty_list
-
-@app.callback(
-    Output('steps-demo', 'current'),
-    Output("graph-message", "children", allow_duplicate=True),
-    [Input('steps-demo-go-next', 'nClicks'),
-     Input('steps-demo-go-last', 'nClicks')],
-    State('steps-demo', 'current'),
-    State('graph-value-setter-store', 'data'),
-    prevent_initial_call=True
-)
-def steps_callback_demo_part1(go_next, go_last, current, graph_data):
-    ctx = dash.callback_context
-    if ctx.triggered[0]['prop_id'].startswith('steps-demo-go-next'):
-        empty_list = check_node_data(graph_data)
-        # return current + 1, []
-        if len(empty_list) == 0:
-            return current + 1, []
-        else:
-            return current, fac.AntdModal(f"Please set related constraints for nodes {empty_list}",
-                                                 title='Error', centered=True, visible=True)
-    elif ctx.triggered[0]['prop_id'].startswith('steps-demo-go-last'):
-        return max(current - 1, 0), []
-    else:
-        return 0, []
-
-
-# ===================step swap layout callback========================
-@app.callback(
-    Output('steps-demo-current', 'style'),
-    Output('steps-demo-first', 'style'),
-    Input('steps-demo', 'current'),
-    prevent_initial_call=True
-)
-def steps_callback_demo_part2(current):
-    if current == 0:
-        return card_style_hide, card_style
-    else:
-        return card_style, card_style_hide
-
 
 ##===================initialize general input=====================
 @app.callback(
@@ -267,8 +192,8 @@ def steps_callback_demo_part2(current):
 )
 def initialize_general_input(general_input, train_data):
     general_input[0]['props']['children']['props']['value'] = train_data['train']['batchsize']
-    general_input[1]['props']['children']['props']['value'] = train_data['train']['epochs']
-    general_input[2]['props']['children']['props']['value'] = train_data['train']['dataset_path']
+    general_input[1]['props']['children']['props']['value'] = train_data['train']['initlr']
+    # general_input[2]['props']['children']['props']['value'] = train_data['train']['dataset_path']
     return general_input
 
 
@@ -288,54 +213,77 @@ def update_sample_value(general_nClicks, general_data, previous_data):
         if general_dict is None:
             return dash.no_update, error_message
         data['train']['batchsize'] = general_dict['batchsize']
-        data['train']['epochs'] = general_dict['epochs']
-        data['train']['dataset_path'] = general_dict['dataset_path']
-        print(data)
+        data['train']['initlr'] = general_dict['initlr']
         return data, success_message
     else:
         return dash.no_update, []
 
 
-# @app.callback(
-#     Output('sample-value-setter-store', 'data', allow_duplicate=True),
-#     Output('samlpe-layout-update-value-message', 'children', allow_duplicate=True),
-#     Input('general-button', 'nClicks'),
-#     Input('general-input', 'children'),
-#     State('training-value-setter-store', 'data'),
-#     State('graph-value-setter-store', 'data'),
-#     State('sample-value-setter-store', 'data'),
-#     prevent_initial_call=True,
-# )
-# def update_sample_value(general_nClicks, general_data, train_data, graph_data, sample_data):
-#     if general_nClicks:
-#         data = train_data or sample_data
-#         general_dict = getter_value(general_data[:-1])
-#         if general_dict is None:
-#             return dash.no_update, error_message
-#         data['train']['batchsize'] = general_dict['batchsize']
-#         data['train']['epochs'] = general_dict['epochs']
-#         data['train']['dataset_path'] = general_dict['dataset_path']
-#         data['sample_constrain'] = graph_data['sample_constrain']
-#         # print('add general_setting to data', data)
-#         return data, success_message
-#     else:
-#         return dash.no_update, []
-
-
 ##====================download sample_model.json============================
+
+@app.callback(
+    Output('final-download-button', 'href'),
+    Input('sample-download-button', 'nClicks'),
+    prevent_initial_call=True,
+)
+def download_func(nClicks):
+    if nClicks:
+        # with zipfile.ZipFile('/home/linjie/projects/dash_projects/tree_invent_web/upload/sample_dir/download.zip', 'w') as zipobj:
+        #     for file in ['case_1.sdf', 'sp_8DZ0_Hconstraint_TI_ENS_2.in']:
+        #         try:
+        #             zipobj.write(os.path.join('/home/linjie/projects/dash_projects/tree_invent_web/upload/test_dir', file))
+        #         except FileNotFoundError:
+        #             pass
+        return f"/download/case_1.sdf"
+    else:
+        return dash.no_update
+
 @app.callback(
     Output('sample-download-json', 'data'),
     Input('sample-download-button', 'nClicks'),
     State('sample-value-setter-store', 'data'),
-    State('sample-value-setter-store', 'data'),
+    State('atom-index-value-setter-store', 'data'),
     prevent_initial_call=True,
 )
-def download_func(nClicks, data, train_data):
-    for k in ['batchsize', 'epochs', 'dataset_path']:
-        train_data['train'][k] = data['train'][k]
-    data.update(train_data)
-    data = json.dumps(data)
-    return dict(content=str(data), filename="sample_model.json")
+def download_func(nClicks, data, mol_data):
+    uuid_name = str(uuid.uuid4())
+    result_dir = os.path.join(sample_dir, uuid_name)
+    os.makedirs(result_dir)
+    with open(os.path.join(result_dir, 'sample_file.json'), 'w')as f:
+        json.dump(data, f)
+    dir_list, filename_list = [result_dir], ['sample_file.json']
+    if len(mol_data)>0:
+        for k, v in mol_data.items():
+            dir_list.append(os.path.dirname(v['specific_nodefile']))
+            filename_list.append(os.path.basename(v['specific_nodefile']))
+    with zipfile.ZipFile(os.path.join(result_dir, 'sample_file.zip'), 'w') as zipobj:
+        for dir, filename in zip(dir_list, filename_list):
+            try:
+                os.chdir(dir)
+                zipobj.write(filename)
+            except FileNotFoundError:
+                pass
+    return dcc.send_file(os.path.join(result_dir, 'sample_file.zip'))
+
+
+# @app.callback(
+#     Output('sample-download-json', 'data'),
+#     Input('sample-download-button', 'nClicks'),
+#     State('sample-value-setter-store', 'data'),
+#     State('training-value-setter-store', 'data'),
+#     prevent_initial_call=True,
+# )
+# def download_func(nClicks, data, train_data):
+#     for k in ['batchsize', 'initlr']:
+#         train_data['train'][k] = data['train'][k]
+#     data.update(train_data)
+#     data = json.dumps(data)
+#     print('data', data)
+#     return dict(content=str(data), filename="sample_model.json")
+
+
+
+
 
 
 ##========================================================================================
@@ -401,7 +349,7 @@ def update_rl_value(acc_steps, scheduler, min_value, max_value, same_value, rl_g
     if output_data['temp_scheduler']=='linear':
         if min_value is None or max_value is None:
             return dash.no_update, error_message
-        linear_value = (min_value, max_value)
+        linear_value = tuple([min_value, max_value])
         output_data.update({'temp_range': linear_value})
     else:
         if same_value is None:
@@ -464,23 +412,10 @@ def update_sample_value(rl_nClicks, use_rl_nClicks, similarities_checkbox, activ
             data['rl'].update({'score_components': score_components})
             data['rl'].update({'score_weights': weight_list})
             # data = json.dumps(data)
-            # print('final data', data)
+            print('final data', data)
             return data, success_message
         else:
             return dash.no_update, fac.AntdModal('You must choose at least one scoring component!', title='Update reinforcement learning value Error', centered=True, visible=True)
     else:
         return dash.no_update, []
 
-
-
-
-for name in ['general', 'enter-value']:
-    @app.callback(
-        Output(f"{name}-button", 'nClicks'),
-        Input('app-tabs', 'value')
-    )
-    def setter_nClicks(value):
-        if value=='tab1':
-            return None
-        else:
-            return dash.no_update

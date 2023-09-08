@@ -1,10 +1,9 @@
 import sys
 
-import dash
 import feffery_antd_components as fac
 from dash.dependencies import Input, Output, State
 
-from .common_layout import mol_dir, constrain_number_type, constrain_list_type, constrain_list_list_type, \
+from .common_layout import constrain_number_type, constrain_list_type, constrain_list_list_type, \
     constrain_dict_type, error_message
 
 sys.path.append("..")
@@ -36,8 +35,8 @@ def get_current_edges(elements):
 
 ##===================add/remove node by tapNodeData=======================
 @app.callback(Output('cytoscape-elements-callbacks', 'elements'),
-              Input('btn-add-node', 'n_clicks_timestamp'),
-              Input('btn-remove-node', 'n_clicks_timestamp'),
+              Input('add-node-button', 'n_clicks_timestamp'),
+              Input('remove-node-button', 'n_clicks_timestamp'),
               State('cytoscape-elements-callbacks', 'tapNodeData'),
               State('cytoscape-elements-callbacks', 'elements'),
               prevent_initial_call=True)
@@ -99,8 +98,8 @@ def update_elements(btn_add, btn_remove, tapNodeData, elements):
 ##===================add edge by tapEdgeData / remove edge by selectedNodeData=======================
 @app.callback(
     Output('cytoscape-elements-callbacks', 'elements', allow_duplicate=True),
-    Input('btn-add-edge', 'n_clicks_timestamp'),
-    Input('btn-remove-edge', 'n_clicks_timestamp'),
+    Input('add-edge-button', 'n_clicks_timestamp'),
+    Input('remove-edge-button', 'n_clicks_timestamp'),
     State('cytoscape-elements-callbacks', 'tapEdgeData'),
     State('cytoscape-elements-callbacks', 'selectedNodeData'),
     State('cytoscape-elements-callbacks', 'elements'),
@@ -180,9 +179,12 @@ eval_type = [
 
 import ast
 
-
 def define_value(select_attr, input_node_value):
     k, v = select_attr[1], input_node_value
+
+    if v is None:
+        return None
+    v = v.strip() if isinstance(v, str) else v
     if k in constrain_number_type:
         return v
 
@@ -190,17 +192,19 @@ def define_value(select_attr, input_node_value):
         if v.startswith("[["):
             try:
                 v = ast.literal_eval(v)
+                return v
             except:
-                v = None
+                return None
         else:
-            v = None
+            return None
 
     elif k in constrain_list_type:
         if v.startswith("["):
             try:
                 v = ast.literal_eval(v)
+                return v
             except:
-                v = None
+                return None
         else:
             return None
 
@@ -208,12 +212,17 @@ def define_value(select_attr, input_node_value):
         if v.startswith('{'):
             try:
                 v = ast.literal_eval(v)
+                return v
             except:
-                v = None
+                return None
         else:
             return None
 
-    return v
+    else:
+        if v.isdigit() or v.startswith('[') or v.startswith('{') or v.startswith('(') or v == '':
+            return None
+        else:
+            return v
 
 
 # def define_value(select_attr, input_node_value):
@@ -241,9 +250,9 @@ def getter_graph_value_dict(current_nodes):
     for node_data in current_nodes:
         output_dict[node_data['data']['id']] = {'node add': node_data['data']['node add'],
                                                 'node conn': node_data['data']['node conn']}
-        if 'specific_nodefile' in node_data['data']['node add'].keys():
-            if mol_dir not in node_data['data']['node add']['specific_nodefile']:
-                node_data['data']['node add']['specific_nodefile'] = f"{mol_dir}/{node_data['data']['node add']['specific_nodefile']}"
+        # if 'specific_nodefile' in node_data['data']['node add'].keys():
+        #     if mol_dir not in node_data['data']['node add']['specific_nodefile']:
+        #         node_data['data']['node add']['specific_nodefile'] = f"{mol_dir}/{node_data['data']['node add']['specific_nodefile']}"
     return output_dict
 
 
@@ -253,8 +262,7 @@ def getter_graph_value_dict(current_nodes):
               Output('enter-value-button', "nClicks", allow_duplicate=True),
               Output('graph-dropdown-message', 'children'),
               Output('constrain-item', 'validateStatus'),
-              # Output('constrain-value', 'value', allow_duplicate=True),
-              # Output('constrain-attr', 'value'),
+              Output('atom-index-value-setter-store', 'data'),
               Input('enter-value-button', "nClicks"),
               Input('cytoscape-elements-callbacks', 'tapNodeData'),
               State("constrain-attr", "value"),
@@ -262,24 +270,34 @@ def getter_graph_value_dict(current_nodes):
               State('constrain-value2', 'checked'),
               State('constrain-state', 'value'),
               State('cytoscape-elements-callbacks', 'elements'),
+              State('atom-index-value-setter-store', 'data'),
+              State('current-node-value-setter-store', 'data'),
               prevent_initial_call=True)
-def update_node_attributes(nClicks, tapNodeData, select_attr, node_value, node_checked, constrain_state, elements):
+def update_node_attributes(nClicks, tapNodeData, select_attr, node_value, node_checked, constrain_state, elements,
+                           atom_index_data, current_node_data):
     graph_dropdown_message = []
     constrain_value_state = None
-    show_data = show_TapNodeData(tapNodeData) if tapNodeData else []
-    select_node = tapNodeData["id"] if tapNodeData else "0"
     current_nodes, node_ids = get_current_nodes(elements)
     current_edges, edges_ids = get_current_edges(elements)
-    # print('current_nodes', current_nodes)
+    select_node = tapNodeData["id"] if tapNodeData else "0"
+    tapNodeData = current_nodes[int(select_node)]['data']
+    show_data = show_TapNodeData(tapNodeData)
     if nClicks:
         if select_attr is not None:
             if constrain_state=='add':
                 if select_attr[1] != 'force_step':
                     update_node_value = define_value(select_attr, node_value)
                     if update_node_value is not None:
-                        current_nodes[int(select_node)]["data"][select_attr[0]][select_attr[1]] = update_node_value
-                        graph_dropdown_message = fac.AntdMessage(content='Add node attribute successfully', type='success')
-                        constrain_value_state = 'success'
+                        if select_attr[1] == 'specific_nodefile':
+                            current_nodes[int(select_node)]["data"][select_attr[0]][
+                                select_attr[1]] = update_node_value + f"/specific_nodefile_{select_node}.pickle"
+                            atom_index_data.update(current_node_data)
+
+                        else:
+                            current_nodes[int(select_node)]["data"][select_attr[0]][select_attr[1]] = update_node_value
+                            graph_dropdown_message = fac.AntdMessage(content='Add node attribute successfully',
+                                                                     type='success')
+                            constrain_value_state = 'success'
                     else:
                         graph_dropdown_message = error_message
                         # graph_dropdown_message = fac.AntdModal(content='Please enter the correct constrain value!',
@@ -298,11 +316,11 @@ def update_node_attributes(nClicks, tapNodeData, select_attr, node_value, node_c
                         content=f"Constrain attribute:{select_attr[1]} not in current node", type='error')
         else:
             graph_dropdown_message = fac.AntdMessage(content='Please select a constrain!', type='error')
-            return select_node, dash.no_update, show_data, 0, graph_dropdown_message, constrain_value_state
+            return select_node, current_nodes + current_edges, show_data, 0, graph_dropdown_message, constrain_value_state, atom_index_data
 
         tapNodeData = current_nodes[int(select_node)]['data']
         show_data = show_TapNodeData(tapNodeData)
-    return select_node, current_nodes + current_edges, show_data, 0, graph_dropdown_message, constrain_value_state
+    return select_node, current_nodes + current_edges, show_data, 0, graph_dropdown_message, constrain_value_state, atom_index_data
 
 
 ##===================update graph-value-setter-store=====================

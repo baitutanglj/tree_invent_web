@@ -75,15 +75,15 @@ graph_card = dbc.Card(
                      ),
         dbc.CardFooter(
             dbc.Row([
-                dbc.Col(dbc.Button('Add Node', id='btn-add-node', n_clicks_timestamp=0, className="me-2", active=True),
+                dbc.Col(dbc.Button('Add Node', id='add-node-button', n_clicks_timestamp=0, className="me-2", active=True),
                         md=3),
                 dbc.Col(
-                    dbc.Button('Del Node', id='btn-remove-node', n_clicks_timestamp=0, className="me-2", active=False),
+                    dbc.Button('Del Node', id='remove-node-button', n_clicks_timestamp=0, className="me-2", active=False),
                     md=3),
-                dbc.Col(dbc.Button('Add Edge', id='btn-add-edge', n_clicks_timestamp=0, className="me-2", active=True),
+                dbc.Col(dbc.Button('Add Edge', id='add-edge-button', n_clicks_timestamp=0, className="me-2", active=True),
                         md=3),
                 dbc.Col(
-                    dbc.Button('Del Edge', id='btn-remove-edge', n_clicks_timestamp=0, className="me-2", active=False),
+                    dbc.Button('Del Edge', id='remove-edge-button', n_clicks_timestamp=0, className="me-2", active=False),
                     md=3),
             ]),
         ),

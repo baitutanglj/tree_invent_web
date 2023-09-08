@@ -7,8 +7,7 @@ import feffery_antd_components as fac
 from dash import html, dcc
 from dash.dependencies import Input, Output, State
 from rdkit import Chem
-import time
-
+import pickle
 from .common_layout import number_style, mol_dir, constrain_number_type, constrain_list_type, constrain_list_list_type, \
     constrain_dict_type, success_message, error_message
 
@@ -182,6 +181,8 @@ def setter_constrain_state(constrain_attr, value):
             return 'constrain value example: [[2]]'
         elif constrain_attr[1] in constrain_dict_type:
             return "constrain value example: {'C':6,'N':3,'O':2,'F':1,'P':1,'S':1,'Cl':1,'Br':1,'I':1}"
+        elif constrain_attr[1] == 'specific_nodefile':
+            return "constrain value example: local absolute dictionary path to store specific_nodefile.pickle file"
     else:
         return None
 
@@ -200,22 +201,22 @@ def toggle_modal(value, nClicks):
     else:
         return False
 
-@app.callback(
-    Output('constrain-value', 'disabled'),
-    Input("constrain-attr", "value"),
-)
-def toggle_modal(value):
-    if value == ['node add', 'specific_nodefile']:
-        return True
-    else:
-        return False
+# @app.callback(
+#     Output('constrain-value', 'disabled'),
+#     Input("constrain-attr", "value"),
+# )
+# def toggle_modal(value):
+#     if value == ['node add', 'specific_nodefile']:
+#         return True
+#     else:
+#         return False
 
 ##=======================draw smile callback=========================
 @app.callback(
-    Output('constrain-value', 'value'),
     Output('current-node-value-setter-store', 'data'),
     Output('atom-index', 'children'),
     Output('display-atom-index', 'style'),
+    Output('graph-dropdown-message', 'children', allow_duplicate=True),
     Input('jsme-button', 'n_clicks'),
     State('select-node', 'value'),
     State('jsme-graph', 'eventSmiles'),
@@ -227,39 +228,58 @@ def update_value(jsme_nClicks, select_node, input_smiles):
     if action.startswith('jsme-button') and input_smiles:
         glide_uploadId = str(uuid.uuid1())
         os.makedirs(f"{mol_dir}/{glide_uploadId}")
-        output_path = f"{mol_dir}/{glide_uploadId}/specific_nodefile.sdf"
+        # output_path = f"{mol_dir}/{glide_uploadId}/specific_nodefile_{select_node}.sdf"
+        output_path = f"{mol_dir}/{glide_uploadId}/specific_nodefile_{select_node}.pickle"
+        # mol = Chem.MolFromSmiles(input_smiles)
+        # num_atoms = mol.GetNumHeavyAtoms()
+        # atom_index = ','.join([str(i[0]) for i in mol.GetSubstructMatches(Chem.MolFromSmiles('*'))])
+        # current_node_data = {select_node: {'specific_nodefile': f"{glide_uploadId}/specific_nodefile.sdf",
+        #                                       'num_atoms': num_atoms, 'atom_index': atom_index}}
+        # with Chem.SDWriter(output_path) as f:
+        #     f.write(mol)
+
         mol = Chem.MolFromSmiles(input_smiles)
-        num_atoms = mol.GetNumHeavyAtoms()
-        atom_index = ','.join([str(i[0]) for i in mol.GetSubstructMatches(Chem.MolFromSmiles('*'))])
-        current_node_data = {select_node: {'specific_nodefile': f"{glide_uploadId}/specific_nodefile.sdf",
-                                              'num_atoms': num_atoms, 'atom_index': atom_index}}
-        with Chem.SDWriter(output_path) as f:
-            f.write(mol)
+        if mol:
+            patt = Chem.MolFromSmiles('*')
+            num_atoms = mol.GetNumHeavyAtoms()
+            patt_index = mol.GetSubstructMatches(patt)  # ((0,), (9,))
+            patt_index = [i[0] for i in patt_index]
+            atom_index = ','.join([str(i - patt_index.index(i) - 1) if i != 0 else str(i - patt_index.index(i)) for i in patt_index])
+            rmol = Chem.DeleteSubstructs(mol, patt)
+            current_node_data = {select_node: {'specific_nodefile': output_path,
+                                                  'num_atoms': num_atoms, 'atom_index': atom_index}}
+            # with Chem.SDWriter(output_path) as f:
+            #     f.write(rmol)
+            with open(output_path, 'wb') as f:
+                pickle.dump(rmol, f)
+            atom_index_message = fac.AntdAlert(
+                message=f"{current_node_data[select_node]['num_atoms']} atoms in the molecule, "
+                        f"the connected atom id of the molecule: {current_node_data[select_node]['atom_index']}", type='info')
 
-        atom_index_message = fac.AntdAlert(
-            message=f"{current_node_data[select_node]['num_atoms']} atoms in the molecule, "
-                    f"the connected atom id of the molecule: {current_node_data[select_node]['atom_index']}", type='info')
+            return current_node_data, atom_index_message, {'display':'block'}, fac.AntdMessage(content='Draw molecule Successfully!', type='success')
+        else:
+            return dash.no_update,  [], {'display':'none'}, fac.AntdMessage(content='Please draw a correct molecule', type='error')
 
-        return f"{glide_uploadId}/specific_nodefile.sdf", current_node_data, atom_index_message, {'display':'block'}
 
     else:
-        return dash.no_update, dash.no_update, [], {'display':'none'}
+        return dash.no_update, [], {'display':'none'}, []
 
 ##=================update atom-index-value-setter-store================
-@app.callback(
-    Output('atom-index-value-setter-store', 'data'),
-    Input('enter-value-button', "nClicks"),
-    State('current-node-value-setter-store', 'data'),
-    State('atom-index-value-setter-store', 'data'),
-    prevent_initial_call=True
-)
-def update_data_atom_index_store(nClicks, current_node_data, previous_data):
-    data = previous_data
-    if nClicks:
-        data.update(current_node_data)
-        return data
-    else:
-        return dash.no_update
+# @app.callback(
+#     Output('atom-index-value-setter-store', 'data'),
+#     Input('enter-value-button', "nClicks"),
+#     # Input('constrain-value', 'value'),
+#     State('current-node-value-setter-store', 'data'),
+#     State('atom-index-value-setter-store', 'data'),
+#     prevent_initial_call=True
+# )
+# def update_data_atom_index_store(nClicks, current_node_data, previous_data):
+#     data = previous_data
+#     if nClicks:
+#         data.update(current_node_data)
+#         return data
+#     else:
+#         return dash.no_update
 
 
 ##=========================display-atom-index==========================
@@ -292,7 +312,6 @@ def update_value(select_node, atom_index_data):
 )
 def clear_constrain(nClicks, tapNodeData):
     if nClicks or tapNodeData:
-        # time.sleep(3)
         return None, None, None
     else:
         return dash.no_update
