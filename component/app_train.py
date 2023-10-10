@@ -29,8 +29,7 @@ for name in ['model', 'train', 'system']:
     @app.callback(
         Output(f"{name}-value-setter-store", 'data'),
         Output('train-layout-update-value-message', 'children', allow_duplicate=True),
-        Output(f"{name}-button", 'nClicks', allow_duplicate=True),
-        Output('steps-demo-go-next', 'disabled', allow_duplicate=True),
+        Output(f"{name}-button", 'nClicks'),
         Input(f"{name}-button", 'nClicks'),
         State(f"{name}-input", 'children'),
         prevent_initial_call=True
@@ -40,11 +39,11 @@ for name in ['model', 'train', 'system']:
             output_dict = getter_value(input_data[:-2])
             if output_dict is not None:
                 data = output_dict
-                return data, success_message, 0, False
+                return data, success_message, 0
             else:
-                return dash.no_update, error_message, 0, True
+                return dash.no_update, error_message, 0
         else:
-            return dash.no_update, [], 0, True
+            return dash.no_update, [], 0
 
 
 @app.callback(
@@ -74,15 +73,28 @@ def download_func(nClicks, data):
     return dict(content=str(data), filename="train_model.json")
 
 
-@app.callback(
-    Output('sample-value-setter-store', 'data', allow_duplicate=True),
-    Input('training-value-setter-store', 'data'),
-    State('sample-value-setter-store', 'data'),
-    prevent_initial_call=True
-)
-def update_graph_value(train_data, previous_data):
-    data = previous_data
-    data.update(train_data)
-    data['train'] = {'batchsize': train_data['train']['batchsize'],
-                     'initlr': train_data['train']['initlr']}
-    return data
+# @app.callback(
+#     Output('sample-value-setter-store', 'data', allow_duplicate=True),
+#     Input('training-value-setter-store', 'data'),
+#     State('sample-value-setter-store', 'data'),
+#     prevent_initial_call=True
+# )
+# def update_graph_value(train_data, previous_data):
+#     data = previous_data
+#     data.update(train_data)
+#     data['train'] = {'prior': train_data['train']['model_save_path'],
+#                      'batchsize': train_data['train']['batchsize'],
+#                      'initlr': train_data['train']['initlr']}
+#     return data
+
+for name in ['model', 'train', 'system']:
+    @app.callback(
+        Output(f"{name}-button", 'nClicks', allow_duplicate=True),
+        Input('app-tabs', 'value'),
+        prevent_initial_call=True
+        )
+    def setter_nClicks(value):
+        if value=='tab2':
+            return None
+        else:
+            return dash.no_update

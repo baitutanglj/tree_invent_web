@@ -90,7 +90,7 @@ train_dict = {
         "batchsize": 1000,
         "epochs": 1000,
         "initlr": 0.0001,
-        "dataset_path": "./datasets",
+        "model_save_path": "",
         "nmols_per_epoch": 25000,
         "rearrange_molgraph_mode": "random"
     },
@@ -106,7 +106,14 @@ train_dict = {
         "ring_cover_rate": 0.97
     },
 }
-
+sample_dict = {
+    'model': {
+        'prior': '',
+        'model_save_path': '',
+        'batchsize': 1000,
+        'initlr': 0.0001
+    }
+}
 sample_constrain_dict = {
     'sample_constrain': {
         'max_node_steps': 5,
@@ -155,7 +162,8 @@ train_input = fac.AntdCollapse(
             fac.AntdFormItem(fac.AntdInputNumber(id='epochs', value=1000, style=number_style), label='epochs'),
             fac.AntdFormItem(fac.AntdInputNumber(id='initlr', value=0.0001, step=0.0001, style=number_style),
                              label='initlr'),
-            fac.AntdFormItem(fac.AntdInput(id='dataset_path', value='./datasets'), help='./datasets', label='dataset_path'),
+            # fac.AntdFormItem(fac.AntdInput(id='dataset_path', value='./datasets'), help='./datasets', label='dataset_path'),
+            fac.AntdFormItem(fac.AntdInput(id='model-save-path', value=''), help='path of save output model file, example:XXX/XXX.zip', label='model_save_path'),
             fac.AntdFormItem(fac.AntdInputNumber(id='nmols_per_epoch', value=25000, style=number_style),
                              label='nmols_per_epoch'),
             fac.AntdFormItem(fac.AntdRadioGroup(
@@ -240,7 +248,7 @@ number_type = ['acc_steps', 'max_gen_atoms', 'tanimoto_k', 'shape_w', 'color_w',
                'ncores', 'nposes', 'batchsize', 'epochs', 'max_node_steps', 'max_ring_nodes', 'temp',
                'max_atoms', 'max_cliques', 'max_rings', 'max_ring_size', 'max_ring_states', 'max_node_add_states', 'max_node_connect_states', 'ring_cover_rate']
 string_type = ['qsar_models_path', 'cff_path', 'reflig_sdf_path', 'dock_input_path', 'dockstream_root_path',
-               'AutoDockVina', 'target_pdb', 'reflig_pdb', 'vina_bin_path', 'grid_path', 'dataset_path',
+               'AutoDockVina', 'target_pdb', 'reflig_pdb', 'vina_bin_path', 'grid_path', 'dataset_path', 'model_save_path', 'prior'
                'target_molfile', 'target_mol_dictionary', 'qsar_models_dictionary', 'shape_rocs_dictionary'
                'target_type', 'sim_measure', 'backend', 'constrain_option', 'ring_check_mode', 'temperature_scheduler',
                'rearrange_molgraph_mode', 'ring_check_mode', 'device', 'specific_nodefile']
@@ -306,75 +314,5 @@ def getter_value(input_data):
     return output_dict
 
 
-
-
-
-
-
-# number_type = ['acc_steps', 'max_gen_atoms', 'tanimoto_k', 'shape_w', 'color_w', 'low_threshold', 'high_threshold', 'k',
-#                'ncores', 'nposes', 'batchsize', 'epochs', 'max_node_steps', 'max_ring_nodes', 'temp']
-# string_type = ['qsar_models_path', 'cff_path', 'reflig_sdf_path', 'dock_input_path', 'dockstream_root_path',
-#                'AutoDockVina', 'target_pdb', 'reflig_pdb', 'vina_bin_path', 'glide_ver', 'grid_path', 'dataset_path', 'target_molfile',
-#                'target_type', 'sim_measure', 'backend', 'constrain_option', 'ring_check_mode', 'temperature_scheduler', 'rearrange_molgraph_mode', 'ring_check_mode', 'device']
-# list_type = ['target_smiles']
-# dict_type = ['glide_flags']
-#
-#
-# def getter_value(input_data):
-#     output_dict = {}
-#
-#     for i in range(len(input_data)):
-#         k = input_data[i]['props']['label']
-#         # print(k)
-#         if 'value' in input_data[i]['props']['children']['props'].keys():
-#             v = input_data[i]['props']['children']['props']['value']
-#         elif 'checked' in input_data[i]['props']['children']['props']:
-#             v = input_data[i]['props']['children']['props']['checked']
-#         else:
-#             return None
-#
-#         if v is None:
-#             return None
-#         if isinstance(v, str):
-#             v = v.strip()
-#             try:
-#                 if k not in string_type:
-#                     if v.startswith('[') or v.startswith('(') or v.startswith('{'):
-#                         v = eval(v)
-#                         if k in number_type:
-#                             if not isinstance(v, int) and not isinstance(v, float):
-#                                 return None
-#                             else:
-#                                 output_dict[k] = v
-#                                 continue
-#
-#                         elif k in list_type:
-#                             if not isinstance(v, list):
-#                                 return None
-#                             else:
-#                                 output_dict[k] = v
-#                                 continue
-#
-#                         elif k in dict_type:
-#                             if not isinstance(v, dict):
-#                                 return None
-#                             else:
-#                                 output_dict[k] = v
-#                                 continue
-#                         else:
-#                             if v:
-#                                 return None
-#                     else:
-#                         return None
-#                 else:
-#                     if v.startswith('[') or v.startswith('(') or v.startswith('{'):
-#                         return
-#                     elif (v.isnumeric() or v=='') and k!='glide_ver':
-#                         return None
-#             except:
-#                 return None
-#         output_dict[k] = v
-#     # print(output_dict)
-#     return output_dict
 
 

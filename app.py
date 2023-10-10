@@ -5,7 +5,7 @@ import feffery_antd_components as fac
 from dash.dependencies import Input, Output, State
 from server import app
 from component.app_header import header
-# from component.app_train import train_layout
+from component.app_train import train_layout
 # from component.app_sample import sample_layout
 from component.app_step import step_layout
 import component.app_callbacks
@@ -31,44 +31,44 @@ tab_selected_style = {
 }
 
 
-# app.layout = html.Div([
-#     header,
-#     dcc.Tabs(
-#         id="app-tabs",
-#         value="tab1",
-#         className="custom-tabs",
-#         children=[
-#             dcc.Tab(
-#                 id="train-tab",
-#                 label='Model setting',
-#                 value="tab1",
-#                 className="custom-tab",
-#                 selected_className="custom-tab--selected",
-#                 style=tab_style,
-#                 selected_style=tab_selected_style,
-#                 children=dbc.Container(train_layout)
-#
-#
-#             ),
-#             dcc.Tab(
-#                 id="sample-tab",
-#                 label='Model sampling',
-#                 value="tab2",
-#                 className="custom-tab",
-#                 selected_className="custom-tab--selected",
-#                 style=tab_style,
-#                 selected_style=tab_selected_style,
-#                 children=[sample_layout]
-#             ),
-#
-#         ]),
-# ])
-
-
 app.layout = html.Div([
     header,
-    step_layout
+    dcc.Tabs(
+        id="app-tabs",
+        value="tab1",
+        className="custom-tabs",
+        children=[
+            dcc.Tab(
+                id="train-tab",
+                label='Model setting',
+                value="tab1",
+                className="custom-tab",
+                selected_className="custom-tab--selected",
+                style=tab_style,
+                selected_style=tab_selected_style,
+                children=dbc.Container(train_layout)
+
+
+            ),
+            dcc.Tab(
+                id="sample-tab",
+                label='Model sampling',
+                value="tab2",
+                className="custom-tab",
+                selected_className="custom-tab--selected",
+                style=tab_style,
+                selected_style=tab_selected_style,
+                children=[step_layout]
+            ),
+
+        ]),
 ])
+
+
+# app.layout = html.Div([
+#     header,
+#     step_layout
+# ])
 
 
 

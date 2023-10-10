@@ -15,6 +15,12 @@
 ## Start the server
 note: Make mol_dir and upload_dir variables in the component/common_layout.py file before starting the server
 ```
-method 1: python app.py
-method 2: waitress-serve --port=8008 app:app.server
+method 1 (Only allow local access):
+          python app.py
+method 2(Allow the intranet access): 
+step1: firewall-cmd --state #check the state of firewall
+        #Result is "running": The firewall is turned on, and the result is that the "not running" firewall is closed.
+step2: service firewalld stop #If the state of firewall is "running", execute this command to trun off the firewall.
+step3: firewall-cmd --state #check the state of firewall again to ensure that the state of firewall "not running".
+step4: waitress-serve --port=8008 app:app.server #trun on the APP service
 ```

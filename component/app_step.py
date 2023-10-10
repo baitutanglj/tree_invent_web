@@ -15,23 +15,23 @@ step_layout = html.Div([
     fac.AntdSteps(
         id='steps-demo',
         steps=[
-            {'title': f'Step 1: Model setting'},
-            {'title': f'Step 2: Topology generate'},
-            {'title': f'Step 3: Sample setting'},
+            # {'title': f'Step 1: Model setting'},
+            {'title': f'Step 1: Topology generate'},
+            {'title': f'Step 2: Sample setting'},
         ],
         direction='horizontal',
         type='navigation',
         allowClick=True
     ),
     # html.Br(),
-    html.Div(id='step1', children=dbc.Container(train_layout), style=card_style_hide),
-    html.Div(id='step2', children=graph_layout),
-    html.Div(id='step3', children=dbc.Container(sample_common_layout)),
+    # html.Div(id='step1', children=dbc.Container(train_layout), style=card_style_hide),
+    html.Div(id='step1', children=graph_layout),
+    html.Div(id='step2', children=dbc.Container(sample_common_layout)),
     fac.AntdDivider(isDashed=True),
     fac.AntdSpace([
         fac.AntdButton('Previous step', id='steps-demo-go-last', type='primary'),
         # fac.AntdDivider(id='step-divider', direction='vertical'),
-        fac.AntdButton('Next step', id='steps-demo-go-next', type='primary', disabled=True)
+        fac.AntdButton('Next step', id='steps-demo-go-next', type='primary')
     ]),
 
 ])
@@ -62,7 +62,7 @@ def steps_callback_demo_part1(go_next, go_last,  current, graph_data):
     if ctx.triggered[0]['prop_id'].startswith('steps-demo-go-next'):
         empty_list = check_node_data(graph_data)
         # return current + 1, []
-        if (current==1) and (len(empty_list) > 0):
+        if (current==0) and (len(empty_list) > 0):
             return current, fac.AntdModal(f"Please set related constraints for nodes {empty_list}",
                                           title='Error', centered=True, visible=True)
         else:
@@ -73,20 +73,6 @@ def steps_callback_demo_part1(go_next, go_last,  current, graph_data):
         return 0, []
 
 #================check swap next step=================
-for name in ['enter-value', 'general-constrain', 'add-node', 'remove-node', 'add-edge', 'remove-edge']:
-    @app.callback(
-        Output(f"{name}-button", 'disabled'),
-        Input('steps-demo', 'current'),
-        Input('steps-demo-go-next', 'disabled'),
-        prevent_initial_call=True
-    )
-    def steps_callback_demo_part1(current, disabled):
-        if (current==1) and disabled==True:
-            return True
-        else:
-            return False
-
-
 for name in ['general', 'rl', 'sample-download']:
     @app.callback(
         Output(f"{name}-button", 'disabled'),
@@ -96,7 +82,7 @@ for name in ['general', 'rl', 'sample-download']:
     )
     def steps_callback_demo_part1(current, graph_data):
         empty_list = check_node_data(graph_data)
-        if (current==2) and (len(empty_list) > 0):
+        if (current==1) and (len(empty_list) > 0):
             return True
         else:
             return False
@@ -105,39 +91,26 @@ for name in ['general', 'rl', 'sample-download']:
 @app.callback(
     Output('step1', 'style'),
     Output('step2', 'style'),
-    Output('step3', 'style'),
     Input('steps-demo', 'current'),
     prevent_initial_call=True
 )
 def steps_callback_demo_part2(current):
     if current == 0:
-        return card_style, card_style_hide, card_style_hide,
-    elif current == 1:
-        return card_style_hide, card_style, card_style_hide
+        return card_style, card_style_hide
     else:
-        return card_style_hide, card_style_hide, card_style
+        return card_style_hide, card_style
 
 
 
 ##=====================click button nClicks=====================
-# for name in ['model', 'train', 'system']:
-#     @app.callback(
-#         Output(f"{name}-button", 'nClicks'),
-#         Input('steps-demo', 'current')
-#     )
-#     def setter_nClicks(value):
-#         if value!='0':
-#             return None
-#         else:
-#             return dash.no_update
-
 for name in ['enter-value', 'general-constrain']:
     @app.callback(
-            Output(f"{name}-button", 'nClicks'),
-            Input('steps-demo', 'current')
+        Output(f"{name}-button", 'nClicks'),
+        Input('steps-demo', 'current'),
+        Input('app-tabs', 'value'),
         )
-    def setter_nClicks(value):
-        if value!='1':
+    def setter_nClicks(value, tabs_value):
+        if value!='0' or tabs_value=='tab1':
             return None
         else:
             return dash.no_update
@@ -145,10 +118,11 @@ for name in ['enter-value', 'general-constrain']:
 for name in ['general', 'rl-button']:
     @app.callback(
         Output(f"{name}-button", 'nClicks'),
-        Input('steps-demo', 'current')
+        Input('steps-demo', 'current'),
+        Input('app-tabs', 'value'),
     )
-    def setter_nClicks(value):
-        if value!='2':
+    def setter_nClicks(value, tabs_value):
+        if value!='1' or tabs_value=='tab1':
             return None
         else:
             return dash.no_update
@@ -172,7 +146,7 @@ def steps_callback_demo_part2(current):
     prevent_initial_call=True
 )
 def steps_callback_demo_part2(current):
-    if current == 2:
+    if current == 1:
         return {'display': 'none'}
     else:
         return {'display': 'block'}

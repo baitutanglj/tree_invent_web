@@ -11,7 +11,7 @@ from dash.dependencies import Input, Output, State
 sys.path.append("..")
 from server import app
 from .common_layout import train_dict, sample_constrain_dict, card_style, card_style_hide, \
-    form_style, number_style, getter_value, success_message, error_message, upload_dir, sample_dir
+    form_style, number_style, getter_value, success_message, error_message, upload_dir, sample_dir, sample_dict
 from .app_score_components import similarities_layout, activity_layout, \
     shape_layout, dockscore_layout
 from .app_graph import graph_layout
@@ -19,7 +19,7 @@ from flask import send_from_directory
 import uuid
 import zipfile
 
-sample_dict = train_dict.copy()
+# sample_dict = train_dict.copy()
 sample_dict.update(sample_constrain_dict)
 rl_dict = {
     'score_components': [],
@@ -37,10 +37,12 @@ general_value_card = fac.AntdCard(
         fac.AntdForm(
             id='general-input',
             children=[
+                fac.AntdFormItem(fac.AntdInput(value=''), help='prior model path, example: XXX/XXX.zip', label='prior'),
+                fac.AntdFormItem(fac.AntdInput(value=''),
+                                 help='path of save output model file, example:XXX/XXX.zip', label='model_save_path'),
                 fac.AntdFormItem(fac.AntdInputNumber(value=1000, style=number_style),
                                  label="batchsize"),
                 fac.AntdFormItem(fac.AntdInputNumber(value=0.0001, step=0.0001, style=number_style), label='initlr'),
-                # fac.AntdFormItem(fac.AntdInput(value='./datasets'), help='./datasets', label='dataset_path'),
                 fac.AntdButton('Update value', id='general-button', type='primary',
                                icon=fac.AntdIcon(icon='antd-check-circle'))
 
@@ -184,17 +186,17 @@ sample_common_layout = fac.AntdSpace(
 
 
 ##===================initialize general input=====================
-@app.callback(
-    Output('general-input', 'children'),
-    Input('general-input', 'children'),
-    Input('training-value-setter-store', 'data'),
-    prevent_initial_call=True,
-)
-def initialize_general_input(general_input, train_data):
-    general_input[0]['props']['children']['props']['value'] = train_data['train']['batchsize']
-    general_input[1]['props']['children']['props']['value'] = train_data['train']['initlr']
-    # general_input[2]['props']['children']['props']['value'] = train_data['train']['dataset_path']
-    return general_input
+# @app.callback(
+#     Output('general-input', 'children'),
+#     Input('general-input', 'children'),
+#     Input('training-value-setter-store', 'data'),
+#     prevent_initial_call=True,
+# )
+# def initialize_general_input(general_input, train_data):
+#     general_input[0]['props']['children']['props']['value'] = train_data['train']['model_save_path']
+#     general_input[1]['props']['children']['props']['value'] = train_data['train']['batchsize']
+#     general_input[2]['props']['children']['props']['value'] = train_data['train']['initlr']
+#     return general_input
 
 
 ##====================update general_setting for sample value======================
@@ -212,8 +214,7 @@ def update_sample_value(general_nClicks, general_data, previous_data):
         general_dict = getter_value(general_data[:-1])
         if general_dict is None:
             return dash.no_update, error_message
-        data['train']['batchsize'] = general_dict['batchsize']
-        data['train']['initlr'] = general_dict['initlr']
+        data['model'].update(general_dict)
         return data, success_message
     else:
         return dash.no_update, []
@@ -221,22 +222,22 @@ def update_sample_value(general_nClicks, general_data, previous_data):
 
 ##====================download sample_model.json============================
 
-@app.callback(
-    Output('final-download-button', 'href'),
-    Input('sample-download-button', 'nClicks'),
-    prevent_initial_call=True,
-)
-def download_func(nClicks):
-    if nClicks:
-        # with zipfile.ZipFile('/home/linjie/projects/dash_projects/tree_invent_web/upload/sample_dir/download.zip', 'w') as zipobj:
-        #     for file in ['case_1.sdf', 'sp_8DZ0_Hconstraint_TI_ENS_2.in']:
-        #         try:
-        #             zipobj.write(os.path.join('/home/linjie/projects/dash_projects/tree_invent_web/upload/test_dir', file))
-        #         except FileNotFoundError:
-        #             pass
-        return f"/download/case_1.sdf"
-    else:
-        return dash.no_update
+# @app.callback(
+#     Output('final-download-button', 'href'),
+#     Input('sample-download-button', 'nClicks'),
+#     prevent_initial_call=True,
+# )
+# def download_func(nClicks):
+#     if nClicks:
+#         # with zipfile.ZipFile('/home/linjie/projects/dash_projects/tree_invent_web/upload/sample_dir/download.zip', 'w') as zipobj:
+#         #     for file in ['case_1.sdf', 'sp_8DZ0_Hconstraint_TI_ENS_2.in']:
+#         #         try:
+#         #             zipobj.write(os.path.join('/home/linjie/projects/dash_projects/tree_invent_web/upload/test_dir', file))
+#         #         except FileNotFoundError:
+#         #             pass
+#         return f"/download/case_1.sdf"
+#     else:
+#         return dash.no_update
 
 @app.callback(
     Output('sample-download-json', 'data'),
@@ -264,27 +265,6 @@ def download_func(nClicks, data, mol_data):
             except FileNotFoundError:
                 pass
     return dcc.send_file(os.path.join(result_dir, 'sample_file.zip'))
-
-
-# @app.callback(
-#     Output('sample-download-json', 'data'),
-#     Input('sample-download-button', 'nClicks'),
-#     State('sample-value-setter-store', 'data'),
-#     State('training-value-setter-store', 'data'),
-#     prevent_initial_call=True,
-# )
-# def download_func(nClicks, data, train_data):
-#     for k in ['batchsize', 'initlr']:
-#         train_data['train'][k] = data['train'][k]
-#     data.update(train_data)
-#     data = json.dumps(data)
-#     print('data', data)
-#     return dict(content=str(data), filename="sample_model.json")
-
-
-
-
-
 
 ##========================================================================================
 ##=====================Choose the rl=========================
