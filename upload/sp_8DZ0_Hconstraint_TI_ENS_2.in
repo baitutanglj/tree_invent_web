@@ -1,0 +1,45 @@
+GRIDFILE   /home/ranting/Data/work/3cl_new/glide-grid_8DZ0_Hconstraint_TI/glide-grid_8DZ0_Hconstraint_TI.zip
+LIGANDFILE   sp_8DZ0_Hconstraint_TI_ENS_2.maegz
+POSES_PER_LIG   10
+POSTDOCK_NPOSE   10
+PRECISION   SP
+
+[CONSTRAINT_GROUP:1]
+    USE_CONS   A:CYS:145:H(hbond):1, A:SER:144:H(hbond):2, A:GLY:143:H(hbond):3
+    NREQUIRED_CONS   1
+
+[CONSTRAINT_GROUP:2]
+    USE_CONS   A:GLU:166:H(hbond):4,
+    NREQUIRED_CONS   1
+
+[FEATURE:1]
+    PATTERN2   "[n] 1 include"
+    PATTERN3   "[N] 1 include"
+    PATTERN4   "[#8] 1 include"
+    PATTERN5   "[#7] 1 include"
+    PATTERN6   "[o] 1 include"
+    PATTERN7   "[O] 1 include"
+
+[FEATURE:2]
+    PATTERN2   "[n] 1 include"
+    PATTERN3   "[N] 1 include"
+    PATTERN4   "[#8] 1 include"
+    PATTERN5   "[#7] 1 include"
+    PATTERN6   "[o] 1 include"
+    PATTERN7   "[O] 1 include"
+
+[FEATURE:3]
+    PATTERN2   "[n] 1 include"
+    PATTERN3   "[N] 1 include"
+    PATTERN4   "[#8] 1 include"
+    PATTERN5   "[#7] 1 include"
+    PATTERN6   "[o] 1 include"
+    PATTERN7   "[O] 1 include"
+
+[FEATURE:4]
+    PATTERN2   "[n] 1 include"
+    PATTERN3   "[N] 1 include"
+    PATTERN4   "[#8] 1 include"
+    PATTERN5   "[#7] 1 include"
+    PATTERN6   "[o] 1 include"
+    PATTERN7   "[O] 1 include"
