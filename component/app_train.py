@@ -66,6 +66,7 @@ def update_training_layout_value(model_data, train_data, system_data, previous_d
     Output('train-download-json', 'data'),
     Input('train-download-button', 'nClicks'),
     State('training-value-setter-store', 'data'),
+    State('training-value-setter-store', 'data'),
     prevent_initial_call=True,
 )
 def download_func(nClicks, data):

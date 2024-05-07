@@ -6,4 +6,3 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 
-app.title = 'Tree Invent'

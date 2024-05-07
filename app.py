@@ -11,7 +11,7 @@ from component.app_step import step_layout
 import component.app_callbacks
 import component.app_train
 import component.app_graph
-import  component.app_step
+import component.app_step
 
 tabs_styles = {
     'height': '44px'

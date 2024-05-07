@@ -549,11 +549,6 @@ for id_name in ['upload-reflig-sdf-file', 'upload-reflig-pdb']:
 
 
 
-
-
-
-
-
 for name in ["similarities", "activity", "shape", "dockscore"]:
     @app.callback(
         Output(f"{name}-modal", 'okCounts'),
